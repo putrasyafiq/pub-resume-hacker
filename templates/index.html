@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Profile Builder</title>
+    <title>Resume Builder</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6; background-color: #f4f7f6; color: #333;
             margin: 0; padding: 20px;
+            scroll-behavior: smooth; /* Adds a nice smooth scroll */
         }
         .container {
             max-width: 900px; margin: 0 auto; background: #ffffff;
@@ -111,7 +112,7 @@
 
     <div class="container">
         <div class="header">
-            <h1>Profile: {{ profile_name }}</h1>
+            <h1>Resume Builder</h1>
             <div class="header-buttons">
                 <a href="/resumes" class="header-btn resume-btn">My Resumes</a>
                 <a href="/logout" class="header-btn logout-btn">Logout</a>
@@ -128,26 +129,11 @@
         
         <form id="particularsForm" class="data-form">
             <h2>Edit Personal Particulars</h2>
-            <div class="form-group">
-                <label for="partName">Name</label>
-                <input type="text" id="partName">
-            </div>
-            <div class="form-group">
-                <label for="partEmail">Email</label>
-                <input type="email" id="partEmail">
-            </div>
-            <div class="form-group">
-                <label for="partCountry">Country Based In</label>
-                <input type="text" id="partCountry">
-            </div>
-            <div class="form-group">
-                <label for="partLanguages">Language Proficiency (comma-separated)</label>
-                <input type="text" id="partLanguages" placeholder="e.g., English, Mandarin, Spanish">
-            </div>
-            <div class="form-buttons">
-                <button type="submit">Save Particulars</button>
-                <button type="button" id="cancelParticularsBtn" class="secondary">Cancel</button>
-            </div>
+            <div class="form-group"><label for="partName">Name</label><input type="text" id="partName"></div>
+            <div class="form-group"><label for="partEmail">Email</label><input type="email" id="partEmail"></div>
+            <div class="form-group"><label for="partCountry">Country Based In</label><input type="text" id="partCountry"></div>
+            <div class="form-group"><label for="partLanguages">Language Proficiency (comma-separated)</label><input type="text" id="partLanguages" placeholder="e.g., English, Mandarin, Spanish"></div>
+            <div class="form-buttons"><button type="submit">Save Particulars</button><button type="button" id="cancelParticularsBtn" class="secondary">Cancel</button></div>
         </form>
 
         <hr> 
@@ -192,6 +178,10 @@
                     <div class="checkbox-group"><input type="checkbox" id="dateAttainedNone"><label for="dateAttainedNone">No End Date</label></div>
                 </div>
             </div>
+            <div class="form-group">
+                <label for="eduDescription">Description (Optional)</label>
+                <textarea id="eduDescription" rows="3" placeholder="e.g., First Author of paper..."></textarea>
+            </div>
             <div class="form-buttons"><button type="submit">Add Education</button><button type="button" id="cancelEducationBtn" class="secondary">Cancel</button></div>
         </form>
 
@@ -230,13 +220,11 @@
         let projects = profile_data.projects;
         let awards = profile_data.awards;
 
-        // Get Particulars elements
+        // (Get elements...)
         const showParticularsFormBtn = document.getElementById('showParticularsFormBtn');
         const particularsForm = document.getElementById('particularsForm');
         const cancelParticularsBtn = document.getElementById('cancelParticularsBtn');
         const particularsDisplay = document.getElementById('particularsDisplay');
-
-        // (Get other elements: Experience, Education, Project, Award)
         const showExperienceFormBtn = document.getElementById('showExperienceFormBtn');
         const experienceForm = document.getElementById('experienceForm');
         const cancelExperienceBtn = document.getElementById('cancelExperienceBtn');
@@ -320,29 +308,24 @@
 
         // --- Particulars Section ---
         showParticularsFormBtn.addEventListener('click', () => {
+            window.scrollTo(0, 0); // --- ADDED ---
             hideAllForms();
             document.getElementById('partName').value = particulars.name || '';
             document.getElementById('partEmail').value = particulars.email || '';
             document.getElementById('partCountry').value = particulars.country || '';
-            // --- REMOVED: Links line ---
             document.getElementById('partLanguages').value = (particulars.languages || []).join(', ');
             particularsForm.style.display = 'block';
         });
         cancelParticularsBtn.addEventListener('click', () => { particularsForm.style.display = 'none'; });
-
         particularsForm.addEventListener('submit', (event) => {
             event.preventDefault();
             const splitAndTrim = (str) => str.split(',').map(s => s.trim()).filter(s => s.length > 0);
-            
-            // --- MODIFIED: updatedParticulars object ---
             const updatedParticulars = {
                 name: document.getElementById('partName').value,
                 email: document.getElementById('partEmail').value,
                 country: document.getElementById('partCountry').value,
-                // --- REMOVED: links line ---
                 languages: splitAndTrim(document.getElementById('partLanguages').value)
             };
-
             fetch('/update_particulars', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -359,25 +342,22 @@
             .catch(error => alert('Error: ' + error.message));
         });
 
-        // --- (Experience, Education, Project, Award sections are unchanged) ---
-        // ... (showExperienceForm, experienceForm submit, etc.) ...
         // --- Experience Section ---
         function showExperienceForm(item = null) {
+            window.scrollTo(0, 0); // --- ADDED ---
             hideAllForms();
             experienceForm.reset();
             document.getElementById('dateEnded').disabled = false;
             document.getElementById('dateEndedPresent').checked = false;
             document.getElementById('dateEndedNone').checked = false;
             const submitBtn = experienceForm.querySelector('button[type="submit"]');
-            
-            if (item) { // Edit Mode
+            if (item) {
                 document.getElementById('experienceEditId').value = item.id;
                 document.getElementById('title').value = item.title;
                 document.getElementById('company').value = item.company;
                 document.getElementById('dateStarted').value = item.dateStarted;
                 document.getElementById('jobDescription').value = item.jobDescription;
                 document.getElementById('skills').value = (item.skills || []).join(', ');
-                
                 if (item.dateEnded === 'Present') {
                     document.getElementById('dateEndedPresent').checked = true;
                     document.getElementById('dateEnded').disabled = true;
@@ -388,7 +368,7 @@
                     document.getElementById('dateEnded').value = item.dateEnded;
                 }
                 submitBtn.textContent = 'Update Experience';
-            } else { // Add Mode
+            } else {
                 document.getElementById('experienceEditId').value = '';
                 submitBtn.textContent = 'Add to Profile';
             }
@@ -442,6 +422,7 @@
 
         // --- Education Section ---
         function showEducationForm(item = null) {
+            window.scrollTo(0, 0); // --- ADDED ---
             hideAllForms();
             educationForm.reset();
             document.getElementById('dateAttained').disabled = false;
@@ -454,6 +435,7 @@
                 document.getElementById('certName').value = item.nameOfCertificate;
                 document.getElementById('institution').value = item.nameOfInstitution;
                 document.getElementById('eduDateStarted').value = item.dateStarted;
+                document.getElementById('eduDescription').value = item.educationDescription || '';
                 
                 if (item.dateAttained === 'Present') {
                     document.getElementById('dateAttainedPresent').checked = true;
@@ -487,19 +469,24 @@
             event.preventDefault();
             const id = document.getElementById('educationEditId').value;
             const isEdit = (id !== '');
+            
             let attainedDateValue;
             if (document.getElementById('dateAttainedPresent').checked) attainedDateValue = 'Present';
             else if (document.getElementById('dateAttainedNone').checked) attainedDateValue = null;
             else attainedDateValue = document.getElementById('dateAttained').value || null;
+            
             const itemData = {
                 id: id || null,
                 nameOfCertificate: document.getElementById('certName').value,
                 nameOfInstitution: document.getElementById('institution').value,
                 dateStarted: document.getElementById('eduDateStarted').value,
-                dateAttained: attainedDateValue
+                dateAttained: attainedDateValue,
+                educationDescription: document.getElementById('eduDescription').value
             };
+            
             const url = isEdit ? '/update_item' : '/add_education';
             const body = isEdit ? JSON.stringify({ itemType: 'education', item: itemData }) : JSON.stringify({ education: itemData });
+
             fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: body })
             .then(response => response.json())
             .then(data => {
@@ -519,17 +506,18 @@
         
         // --- Project Section ---
         function showProjectForm(item = null) {
+            window.scrollTo(0, 0); // --- ADDED ---
             hideAllForms();
             projectForm.reset();
             const submitBtn = projectForm.querySelector('button[type="submit"]');
-            if (item) { // Edit Mode
+            if (item) {
                 document.getElementById('projectEditId').value = item.id;
                 document.getElementById('projectName').value = item.projectName;
                 document.getElementById('projectCompany').value = item.companyName;
                 document.getElementById('projectDate').value = item.projectDate;
                 document.getElementById('projectDescription').value = item.projectDescription;
                 submitBtn.textContent = 'Update Project';
-            } else { // Add Mode
+            } else {
                 document.getElementById('projectEditId').value = '';
                 submitBtn.textContent = 'Add Project';
             }
@@ -579,17 +567,18 @@
         
         // --- Award Section ---
         function showAwardForm(item = null) {
+            window.scrollTo(0, 0); // --- ADDED ---
             hideAllForms();
             awardForm.reset();
             const submitBtn = awardForm.querySelector('button[type="submit"]');
-            if (item) { // Edit Mode
+            if (item) {
                 document.getElementById('awardEditId').value = item.id;
                 document.getElementById('awardName').value = item.awardName;
                 document.getElementById('awardInstitution').value = item.awardInstitution;
                 document.getElementById('awardDate').value = item.awardDate;
                 document.getElementById('awardDescription').value = item.awardDescription;
                 submitBtn.textContent = 'Update Award';
-            } else { // Add Mode
+            } else {
                 document.getElementById('awardEditId').value = '';
                 submitBtn.textContent = 'Add Award';
             }
@@ -640,10 +629,8 @@
 
         // --- Display Update Functions ---
 
-        // --- MODIFIED: updateParticularsDisplay ---
         function updateParticularsDisplay() {
             particularsDisplay.innerHTML = '';
-            
             if (particulars.name) {
                 const nameHeader = document.createElement('h3');
                 nameHeader.textContent = particulars.name;
@@ -656,26 +643,19 @@
                     return p;
                 } return null;
             };
-            
             const emailP = createP('Email', particulars.email);
             if (emailP) particularsDisplay.appendChild(emailP);
-            
             const countryP = createP('Based In', particulars.country);
             if (countryP) particularsDisplay.appendChild(countryP);
-            
             if (particulars.languages && particulars.languages.length > 0) {
                 const langP = createP('Languages', particulars.languages.join(', '));
                 if (langP) particularsDisplay.appendChild(langP);
             }
-            
-            // --- REMOVED: Links display block ---
-            
             if (particularsDisplay.children.length === 0) {
                 particularsDisplay.innerHTML = '<p>No personal details added yet. Click "Edit" to add them.</p>';
             }
         }
 
-        // --- (updateExperienceDisplay, updateEducationDisplay, etc. are unchanged) ---
         function updateExperienceDisplay() {
             experienceDisplay.innerHTML = '';
             experiences.sort((a, b) => new Date(b.dateStarted) - new Date(a.dateStarted));
@@ -701,6 +681,7 @@
                 experienceDisplay.appendChild(card);
             });
         }
+        
         function updateEducationDisplay() {
             educationDisplay.innerHTML = '';
             education.sort((a, b) => new Date(b.dateStarted) - new Date(a.dateStarted));
@@ -713,6 +694,12 @@
                 if (edu.dateAttained === 'Present') durationText = `${edu.dateStarted} to Present`;
                 else if (edu.dateAttained) durationText = `${edu.dateStarted} to ${edu.dateAttained}`;
                 else durationText = edu.dateStarted;
+                
+                let descriptionHtml = '';
+                if (edu.educationDescription) {
+                    descriptionHtml = `<p>${edu.educationDescription}</p>`;
+                }
+
                 card.innerHTML = `
                     <div class="card-controls">
                         <button class="edit-card-btn" data-id="${edu.id}">Edit</button>
@@ -720,10 +707,12 @@
                     </div>
                     <h3>${edu.nameOfCertificate}</h3>
                     <p><strong>Institution:</strong> ${edu.nameOfInstitution}</p>
-                    <p><strong>Duration:</strong> ${durationText}</p>`;
+                    <p><strong>Duration:</strong> ${durationText}</p>
+                    ${descriptionHtml}`;
                 educationDisplay.appendChild(card);
             });
         }
+        
         function updateProjectDisplay() {
             projectDisplay.innerHTML = '';
             projects.sort((a, b) => new Date(b.projectDate) - new Date(a.projectDate));
@@ -744,6 +733,7 @@
                 projectDisplay.appendChild(card);
             });
         }
+        
         function updateAwardDisplay() {
             awardDisplay.innerHTML = '';
             awards.sort((a, b) => new Date(b.awardDate) - new Date(a.awardDate));

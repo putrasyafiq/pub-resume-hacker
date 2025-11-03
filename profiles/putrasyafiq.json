@@ -1,13 +1,12 @@
 {
     "particulars": {
-        "name": "Putra Syafiq Bin Roslan",
+        "name": "Putra Syafiq Roslan",
         "email": "putrasyafiqbr@gmail.com",
         "languages": [
             "English",
             "Malay"
         ],
-        "country": "Singapore",
-        "links": []
+        "country": "Singapore"
     },
     "experiences": [
         {
@@ -70,7 +69,8 @@
             "nameOfCertificate": "Bachelors of Science in Mathematics and Economics, Minor in Business",
             "nameOfInstitution": "Nanyang Technological University",
             "dateStarted": "2018-08-01",
-            "dateAttained": "2022-01-31"
+            "dateAttained": "2022-01-31",
+            "educationDescription": ""
         },
         {
             "id": "b30fdf50-7e13-4671-8c26-780d43ade74b",

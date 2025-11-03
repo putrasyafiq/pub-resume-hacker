@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ data.particulars.name }} - Resume</title>
+    <title>Resume</title>
     <style>
-        /* --- NEW: PDF Margin Control --- */
+        /* --- PDF Margin Control --- */
         @page {
-            margin: 5mm; /* Sets a 0.5cm margin on all sides */
+            margin: 10mm; /* Sets a 1cm margin on all sides */
         }
         /* --- End New --- */
     
@@ -23,6 +23,7 @@
             max-width: 800px;
             margin: 20px auto;
             padding: 40px;
+            /* This is the original style with the border/shadow */
             border: 1px solid #ddd;
             box-shadow: 0 0 10px rgba(0,0,0,0.05);
         }
@@ -45,7 +46,7 @@
             margin-top: 10px;
             font-size: 0.9em;
             color: #555;
-            flex-wrap: wrap; /* Added for responsiveness */
+            flex-wrap: wrap;
         }
         .contact-info span {
             white-space: nowrap;
@@ -54,6 +55,7 @@
         .section {
             margin-bottom: 25px;
         }
+        /* --- Original Blue Style --- */
         .section h2 {
             font-size: 1.4em;
             color: #007bff;
@@ -79,8 +81,8 @@
             font-style: italic;
             font-size: 0.9em;
             color: #555;
-            white-space: nowrap; /* Prevent wrapping */
-            padding-left: 10px; /* Add space */
+            white-space: nowrap;
+            padding-left: 10px;
         }
         .item-subheader {
             font-weight: bold;
@@ -91,7 +93,6 @@
             font-size: 0.95em;
             margin-top: 5px;
             white-space: pre-wrap; /* Allows line breaks */
-            text-align: justify;
         }
         .item-skills {
             font-size: 0.9em;
@@ -110,7 +111,7 @@
                 <span>Location</span>
                 <span>Languages: English</span>
             </div>
-        </header>
+            </header>
 
         <section class="section">
             <h2>Professional Summary</h2>
@@ -139,6 +140,9 @@
                     <span class="duration">Date Started to Date Attained</span>
                 </div>
                 <div class="item-subheader">Institution Name</div>
+                <p class="item-description">
+                    (AI will place the optional education description here, if provided.)
+                </p>
             </div>
         </section>
         
