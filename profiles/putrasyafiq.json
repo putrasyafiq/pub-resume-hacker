@@ -2,12 +2,12 @@
     "particulars": {
         "name": "Putra Syafiq Bin Roslan",
         "email": "putrasyafiqbr@gmail.com",
-        "links": [],
         "languages": [
             "English",
             "Malay"
         ],
-        "country": "Singapore"
+        "country": "Singapore",
+        "links": []
     },
     "experiences": [
         {
@@ -96,5 +96,7 @@
             "projectDescription": "Developed an AI powered solution in Python to break down a complex image into individual components and objects to be analyzed in silo.\nDeveloped a data pipeline to store images as vector embeddings in cloud database.\nDeveloped a search pipeline to enable text to image and image to image searches using vector space and vector search indexes."
         }
     ],
-    "awards": []
+    "awards": [],
+    "ai_custom_prompt": "When generating description of work experience and project experience, you MUST use metrics to showcase the numerical improvement in processes or workplace that is a result of the user's experience or implementations. These metrics are in numerical form such as 25% manpower reduction, reduced 50% of time required, etc. If no metrics are originally provided, give your best estimate.",
+    "ai_prompt": "You must use super flamboyant language."
 }

@@ -19,28 +19,22 @@
             border-bottom: 2px solid #eee; padding-bottom: 10px;
         }
         .header h1 { border-bottom: none; padding-bottom: 0; margin: 0; }
-
-        /* --- Container for header buttons --- */
         .header-buttons {
             display: flex;
             gap: 10px;
         }
-        
         a.header-btn {
             color: white; text-decoration: none;
             padding: 8px 14px; border-radius: 5px; font-size: 14px; font-weight: 500;
         }
         a.logout-btn { background-color: #dc3545; }
         a.logout-btn:hover { background-color: #c82333; }
-        
-        /* --- Style for the resume button --- */
         a.resume-btn {
             background-color: #28a745;
         }
         a.resume-btn:hover {
             background-color: #218838;
         }
-
         .particulars-header {
             display: flex; justify-content: space-between; align-items: center;
         }
@@ -89,11 +83,10 @@
         .data-card {
             border: 1px solid #e0e0e0; background: #fafafa;
             border-radius: 5px; padding: 15px; margin-bottom: 15px;
-            position: relative; /* For positioning buttons */
+            position: relative;
         }
         .data-card h3 { margin-top: 0; }
         
-        /* --- Card Control Buttons --- */
         .card-controls {
             position: absolute;
             top: 15px;
@@ -135,12 +128,26 @@
         
         <form id="particularsForm" class="data-form">
             <h2>Edit Personal Particulars</h2>
-            <div class="form-group"><label for="partName">Name</label><input type="text" id="partName"></div>
-            <div class="form-group"><label for="partEmail">Email</label><input type="email" id="partEmail"></div>
-            <div class="form-group"><label for="partCountry">Country Based In</label><input type="text" id="partCountry"></div>
-            <div class="form-group"><label for="partLinks">Links (comma-separated)</label><input type="text" id="partLinks" placeholder="e.g., https://linkedin.com/..., https://github.com/..."></div>
-            <div class="form-group"><label for="partLanguages">Language Proficiency (comma-separated)</label><input type="text" id="partLanguages" placeholder="e.g., English, Mandarin, Spanish"></div>
-            <div class="form-buttons"><button type="submit">Save Particulars</button><button type="button" id="cancelParticularsBtn" class="secondary">Cancel</button></div>
+            <div class="form-group">
+                <label for="partName">Name</label>
+                <input type="text" id="partName">
+            </div>
+            <div class="form-group">
+                <label for="partEmail">Email</label>
+                <input type="email" id="partEmail">
+            </div>
+            <div class="form-group">
+                <label for="partCountry">Country Based In</label>
+                <input type="text" id="partCountry">
+            </div>
+            <div class="form-group">
+                <label for="partLanguages">Language Proficiency (comma-separated)</label>
+                <input type="text" id="partLanguages" placeholder="e.g., English, Mandarin, Spanish">
+            </div>
+            <div class="form-buttons">
+                <button type="submit">Save Particulars</button>
+                <button type="button" id="cancelParticularsBtn" class="secondary">Cancel</button>
+            </div>
         </form>
 
         <hr> 
@@ -229,25 +236,19 @@
         const cancelParticularsBtn = document.getElementById('cancelParticularsBtn');
         const particularsDisplay = document.getElementById('particularsDisplay');
 
-        // Get Experience elements
+        // (Get other elements: Experience, Education, Project, Award)
         const showExperienceFormBtn = document.getElementById('showExperienceFormBtn');
         const experienceForm = document.getElementById('experienceForm');
         const cancelExperienceBtn = document.getElementById('cancelExperienceBtn');
         const experienceDisplay = document.getElementById('experienceDisplay');
-        
-        // Get Education elements
         const showEducationFormBtn = document.getElementById('showEducationFormBtn');
         const educationForm = document.getElementById('educationForm');
         const cancelEducationBtn = document.getElementById('cancelEducationBtn');
         const educationDisplay = document.getElementById('educationDisplay');
-        
-        // Get Project elements
         const showProjectFormBtn = document.getElementById('showProjectFormBtn');
         const projectForm = document.getElementById('projectForm');
         const cancelProjectBtn = document.getElementById('cancelProjectBtn');
         const projectDisplay = document.getElementById('projectDisplay');
-
-        // Get Award elements
         const showAwardFormBtn = document.getElementById('showAwardFormBtn');
         const awardForm = document.getElementById('awardForm');
         const cancelAwardBtn = document.getElementById('cancelAwardBtn');
@@ -291,7 +292,6 @@
         // Generic Delete Function
         function handleDelete(itemType, id) {
             if (!confirm('Are you sure you want to delete this item?')) return;
-            
             fetch('/delete_item', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -300,7 +300,6 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    // Remove from local array and redraw
                     if (itemType === 'experiences') {
                         experiences = experiences.filter(i => i.id !== id);
                         updateExperienceDisplay();
@@ -325,7 +324,7 @@
             document.getElementById('partName').value = particulars.name || '';
             document.getElementById('partEmail').value = particulars.email || '';
             document.getElementById('partCountry').value = particulars.country || '';
-            document.getElementById('partLinks').value = (particulars.links || []).join(', ');
+            // --- REMOVED: Links line ---
             document.getElementById('partLanguages').value = (particulars.languages || []).join(', ');
             particularsForm.style.display = 'block';
         });
@@ -334,13 +333,16 @@
         particularsForm.addEventListener('submit', (event) => {
             event.preventDefault();
             const splitAndTrim = (str) => str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            
+            // --- MODIFIED: updatedParticulars object ---
             const updatedParticulars = {
                 name: document.getElementById('partName').value,
                 email: document.getElementById('partEmail').value,
                 country: document.getElementById('partCountry').value,
-                links: splitAndTrim(document.getElementById('partLinks').value),
+                // --- REMOVED: links line ---
                 languages: splitAndTrim(document.getElementById('partLanguages').value)
             };
+
             fetch('/update_particulars', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -357,6 +359,8 @@
             .catch(error => alert('Error: ' + error.message));
         });
 
+        // --- (Experience, Education, Project, Award sections are unchanged) ---
+        // ... (showExperienceForm, experienceForm submit, etc.) ...
         // --- Experience Section ---
         function showExperienceForm(item = null) {
             hideAllForms();
@@ -406,12 +410,10 @@
             event.preventDefault();
             const id = document.getElementById('experienceEditId').value;
             const isEdit = (id !== '');
-            
             let endDateValue;
             if (document.getElementById('dateEndedPresent').checked) endDateValue = 'Present';
             else if (document.getElementById('dateEndedNone').checked) endDateValue = null;
             else endDateValue = document.getElementById('dateEnded').value || null;
-            
             const itemData = {
                 id: id || null,
                 title: document.getElementById('title').value, company: document.getElementById('company').value,
@@ -419,10 +421,8 @@
                 jobDescription: document.getElementById('jobDescription').value,
                 skills: document.getElementById('skills').value.split(',').map(s => s.trim()).filter(s => s.length > 0)
             };
-
             const url = isEdit ? '/update_item' : '/add';
             const body = isEdit ? JSON.stringify({ itemType: 'experiences', item: itemData }) : JSON.stringify({ experience: itemData });
-            
             fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: body })
             .then(response => response.json())
             .then(data => {
@@ -487,12 +487,10 @@
             event.preventDefault();
             const id = document.getElementById('educationEditId').value;
             const isEdit = (id !== '');
-            
             let attainedDateValue;
             if (document.getElementById('dateAttainedPresent').checked) attainedDateValue = 'Present';
             else if (document.getElementById('dateAttainedNone').checked) attainedDateValue = null;
             else attainedDateValue = document.getElementById('dateAttained').value || null;
-            
             const itemData = {
                 id: id || null,
                 nameOfCertificate: document.getElementById('certName').value,
@@ -500,10 +498,8 @@
                 dateStarted: document.getElementById('eduDateStarted').value,
                 dateAttained: attainedDateValue
             };
-            
             const url = isEdit ? '/update_item' : '/add_education';
             const body = isEdit ? JSON.stringify({ itemType: 'education', item: itemData }) : JSON.stringify({ education: itemData });
-
             fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: body })
             .then(response => response.json())
             .then(data => {
@@ -641,10 +637,13 @@
             .catch(error => alert('Error: ' + error.message));
         });
 
+
         // --- Display Update Functions ---
 
+        // --- MODIFIED: updateParticularsDisplay ---
         function updateParticularsDisplay() {
             particularsDisplay.innerHTML = '';
+            
             if (particulars.name) {
                 const nameHeader = document.createElement('h3');
                 nameHeader.textContent = particulars.name;
@@ -657,30 +656,26 @@
                     return p;
                 } return null;
             };
+            
             const emailP = createP('Email', particulars.email);
             if (emailP) particularsDisplay.appendChild(emailP);
+            
             const countryP = createP('Based In', particulars.country);
             if (countryP) particularsDisplay.appendChild(countryP);
+            
             if (particulars.languages && particulars.languages.length > 0) {
                 const langP = createP('Languages', particulars.languages.join(', '));
                 if (langP) particularsDisplay.appendChild(langP);
             }
-            if (particulars.links && particulars.links.length > 0) {
-                const p = document.createElement('p');
-                p.innerHTML = `<strong>Links:</strong> `;
-                particulars.links.forEach((link, index) => {
-                    const a = document.createElement('a'); a.href = link;
-                    a.textContent = link.length > 50 ? link.substring(0, 50) + '...' : link;
-                    a.target = '_blank'; p.appendChild(a);
-                    if (index < particulars.links.length - 1) p.append(', ');
-                });
-                particularsDisplay.appendChild(p);
-            }
+            
+            // --- REMOVED: Links display block ---
+            
             if (particularsDisplay.children.length === 0) {
                 particularsDisplay.innerHTML = '<p>No personal details added yet. Click "Edit" to add them.</p>';
             }
         }
 
+        // --- (updateExperienceDisplay, updateEducationDisplay, etc. are unchanged) ---
         function updateExperienceDisplay() {
             experienceDisplay.innerHTML = '';
             experiences.sort((a, b) => new Date(b.dateStarted) - new Date(a.dateStarted));
@@ -706,7 +701,6 @@
                 experienceDisplay.appendChild(card);
             });
         }
-        
         function updateEducationDisplay() {
             educationDisplay.innerHTML = '';
             education.sort((a, b) => new Date(b.dateStarted) - new Date(a.dateStarted));
@@ -730,7 +724,6 @@
                 educationDisplay.appendChild(card);
             });
         }
-        
         function updateProjectDisplay() {
             projectDisplay.innerHTML = '';
             projects.sort((a, b) => new Date(b.projectDate) - new Date(a.projectDate));
@@ -751,7 +744,6 @@
                 projectDisplay.appendChild(card);
             });
         }
-        
         function updateAwardDisplay() {
             awardDisplay.innerHTML = '';
             awards.sort((a, b) => new Date(b.awardDate) - new Date(a.awardDate));

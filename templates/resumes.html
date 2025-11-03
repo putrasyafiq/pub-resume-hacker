@@ -18,41 +18,50 @@
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px;
         }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
         h1 { margin: 0; }
-        a.header-btn {
+        a.header-btn, button.header-btn {
             background-color: #6c757d; color: white; text-decoration: none;
             padding: 8px 14px; border-radius: 5px; font-size: 14px; font-weight: 500;
+            border: none; cursor: pointer; font-family: inherit;
         }
-        a.header-btn:hover { background-color: #5a6268; }
+        a.header-btn:hover, button.header-btn:hover { background-color: #5a6268; }
+        button.prompt-btn { background-color: #17a2b8; }
+        button.prompt-btn:hover { background-color: #138496; }
         
-        /* --- MODIFIED: Form Styles --- */
         .add-resume-form {
             background: #fdfdfd; border: 1px solid #ddd;
             border-radius: 8px; padding: 20px; margin-bottom: 25px;
         }
-        .add-resume-form .form-group {
-            margin-bottom: 15px;
-        }
-        .add-resume-form label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
+        .add-resume-form .form-group { margin-bottom: 15px; }
+        .add-resume-form label { display: block; font-weight: bold; margin-bottom: 5px; }
         .add-resume-form input[type="text"],
         .add-resume-form textarea {
             width: 100%; padding: 10px; border: 1px solid #ccc;
             border-radius: 5px; box-sizing: border-box; 
         }
-        .add-resume-form textarea {
-            min-height: 150px;
-            font-family: inherit;
-        }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-group { flex: 1; }
+        .add-resume-form textarea { min-height: 150px; font-family: inherit; }
+        
         .add-resume-form button {
             background-color: #007bff; color: white; border: none;
             padding: 12px 18px; border-radius: 5px; cursor: pointer;
-            font-size: 16px;
+            font-size: 16px; display: inline-flex; align-items: center;
+            justify-content: center; gap: 8px;
         }
-        /* --- End Form Styles --- */
+        .add-resume-form button:disabled {
+            background-color: #0056b3;
+            cursor: not-allowed;
+        }
+        .spinner {
+            display: none; width: 16px; height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%; border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .resume-list { list-style: none; padding: 0; }
         .resume-item {
@@ -60,26 +69,63 @@
             padding: 15px; background: #fafafa; border: 1px solid #e0e0e0;
             border-radius: 5px; margin-bottom: 10px;
         }
-        .resume-item span { font-size: 1.1em; font-weight: 500; }
-        .resume-item-controls { display: flex; gap: 10px; }
+        .resume-info { display: flex; flex-direction: column; }
+        .resume-info span { font-size: 1.1em; font-weight: 500; }
+        .resume-info small { font-size: 0.9em; color: #555; }
+        
+        .resume-item-controls { display: flex; gap: 10px; align-items: center; }
         .resume-item-controls a, .resume-item-controls button {
             text-decoration: none; padding: 6px 12px; font-size: 14px;
             border-radius: 5px; color: white; border: none; cursor: pointer;
         }
         .resume-item-controls a.view-btn { background-color: #28a745; }
-        .resume-item-controls button.delete-btn { background-color: #dc3545; }
+        .resume-item-controls a.download-btn { background-color: #007bff; }
+        
+        .resume-item-controls button.delete-btn { 
+            background-color: #dc3545; font-size: 1.2em; padding: 4px 10px;
+        }
+        .resume-item-controls button.delete-btn:hover { background-color: #c82333; }
         
         .flashes { list-style: none; padding: 0; margin-bottom: 20px; }
         .flashes li { padding: 12px; border-radius: 5px; font-weight: 500; }
         .flashes li.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .flashes li.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        
+        /* --- Modal Styles (Unchanged) --- */
+        .modal-backdrop {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6);
+            z-index: 100; overflow-y: auto;
+        }
+        .modal-content {
+            background: white; width: 90%; max-width: 800px;
+            margin: 5% auto; padding: 25px; border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-content h2 { margin-top: 0; }
+        .modal-content p { font-size: 0.9em; color: #555; }
+        .modal-content textarea {
+            width: 100%; min-height: 400px; box-sizing: border-box;
+            border: 1px solid #ccc; border-radius: 5px; padding: 10px;
+            font-family: monospace; font-size: 0.9em;
+        }
+        .modal-footer {
+            margin-top: 20px; display: flex;
+            justify-content: flex-end; gap: 10px;
+        }
+        .modal-footer button { padding: 10px 16px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>My Resumes</h1>
-            <a href="/" class="header-btn">Back to Editor</a>
+            <div class="header-left">
+                <h1>My Resumes</h1>
+            </div>
+            <div class="header-right">
+                <button id="showPromptModal" class="header-btn prompt-btn">Edit Custom Instructions</button>
+                <a href="/" class="header-btn">Back to Editor</a>
+            </div>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -93,29 +139,44 @@
         {% endwith %}
 
         <h2>Generate New AI-Tailored Resume</h2>
-        <form action="/add_resume" method="POST" class="add-resume-form">
-            <div class="form-group">
-                <label for="resume_name">New Resume Name</label>
-                <input type="text" id="resume_name" name="resume_name" placeholder="e.g., 'Software Engineer (Google)'" required>
+        <form action="/add_resume" method="POST" class="add-resume-form" onsubmit="showSpinner(this)">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="job_title">Job Title</label>
+                    <input type="text" id="job_title" name="job_title" placeholder="e.g., 'Senior Software Engineer'" required>
+                </div>
+                <div class="form-group">
+                    <label for="company_name">Company Name</label>
+                    <input type="text" id="company_name" name="company_name" placeholder="e.g., 'Google'" required>
+                </div>
             </div>
+            
             <div class="form-group">
                 <label for="job_description">Paste Job Description</label>
                 <textarea id="job_description" name="job_description" placeholder="Paste the full job description text here..." required></textarea>
             </div>
-            <button type="submit">Generate with AI</button>
+            <button type="submit" id="generate-btn">
+                <span class="spinner"></span>
+                <span class="btn-text">Generate with AI</span>
+            </button>
         </form>
 
         <h2>Saved Resumes</h2>
         <ul class="resume-list">
             {% if resume_files %}
-                {% for filename in resume_files %}
+                {% for resume in resume_files %}
                 <li class="resume-item">
-                    <span>{{ filename.replace('.html', '') }}</span>
+                    <div class="resume-info">
+                        <span>{{ resume.role }}</span>
+                        <small>{{ resume.company }} — Generated: {{ resume.generation_date }}</small>
+                    </div>
                     <div class="resume-item-controls">
-                        <a href="/resumes/{{ filename }}" target="_blank" class="view-btn">View</a>
+                        <a href="/resumes/{{ resume.filename }}" target="_blank" class="view-btn">View</a>
+                        <a href="/download_resume/{{ resume.filename }}" class="download-btn">Download</a>
                         <form action="/delete_resume" method="POST" style="display:inline;" onsubmit="return confirm('Delete this resume?');">
-                            <input type="hidden" name="filename" value="{{ filename }}">
-                            <button type="submit" class="delete-btn">Delete</button>
+                            <input type="hidden" name="resume_id" value="{{ resume.id }}">
+                            <button type="submit" class="delete-btn" title="Delete">🗑️</button>
                         </form>
                     </div>
                 </li>
@@ -125,5 +186,92 @@
             {% endif %}
         </ul>
     </div>
+    
+    <div id="promptModal" class="modal-backdrop">
+        <div class="modal-content">
+            <h2>Edit Custom AI Instructions</h2>
+            <p>
+                Add any custom instructions you want the AI to follow *in addition* to the default prompt.
+                For example: "Emphasize my Python and cloud experience" or "Adopt a more formal tone."
+            </p>
+            <p>
+                The main prompt already uses these variables:
+                <code>{job_title}</code>, <code>{company_name}</code>, <code>{job_description}</code>,
+                <code>{profile_json}</code>, <code>{template_example}</code>
+            </p>
+            <textarea id="promptEditor" placeholder="Enter your custom instructions here..."></textarea>
+            <div class="modal-footer">
+                <button id="cancelPromptBtn" class="secondary">Cancel</button>
+                <button id="savePromptBtn">Save Instructions</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Spinner Script (Unchanged) ---
+        function showSpinner(form) {
+            const btn = form.querySelector('#generate-btn');
+            const spinner = btn.querySelector('.spinner');
+            const btnText = btn.querySelector('.btn-text');
+            
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            btnText.textContent = 'Generating...';
+        }
+        
+        // --- MODIFIED: Modal Script ---
+        
+        // 1. Get the current *custom* prompt from Flask
+        let currentCustomPrompt = {{ current_custom_prompt | tojson }};
+        
+        // 2. Get modal elements
+        const showModalBtn = document.getElementById('showPromptModal');
+        const modal = document.getElementById('promptModal');
+        const cancelBtn = document.getElementById('cancelPromptBtn');
+        const saveBtn = document.getElementById('savePromptBtn');
+        const promptEditor = document.getElementById('promptEditor');
+
+        // 3. Show the modal
+        showModalBtn.addEventListener('click', () => {
+            promptEditor.value = currentCustomPrompt; // Load current custom prompt
+            modal.style.display = 'block';
+        });
+
+        // 4. Hide the modal
+        cancelBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+        
+        // 5. Save the custom prompt
+        saveBtn.addEventListener('click', () => {
+            const newPrompt = promptEditor.value;
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+            
+            // MODIFIED: Call the new endpoint
+            fetch('/update_custom_prompt', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ prompt: newPrompt })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    currentCustomPrompt = newPrompt; // Update local copy
+                    modal.style.display = 'none';
+                    alert('Custom instructions saved!');
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error saving instructions: ' + error.message);
+            })
+            .finally(() => {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Instructions';
+            });
+        });
+    </script>
 </body>
 </html>

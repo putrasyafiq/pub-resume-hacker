@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ data.particulars.name }} - Resume</title>
     <style>
+        /* --- NEW: PDF Margin Control --- */
+        @page {
+            margin: 5mm; /* Sets a 0.5cm margin on all sides */
+        }
+        /* --- End New --- */
+    
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.5;
@@ -39,6 +45,7 @@
             margin-top: 10px;
             font-size: 0.9em;
             color: #555;
+            flex-wrap: wrap; /* Added for responsiveness */
         }
         .contact-info span {
             white-space: nowrap;
@@ -72,6 +79,8 @@
             font-style: italic;
             font-size: 0.9em;
             color: #555;
+            white-space: nowrap; /* Prevent wrapping */
+            padding-left: 10px; /* Add space */
         }
         .item-subheader {
             font-weight: bold;
@@ -81,8 +90,8 @@
         .item-description {
             font-size: 0.95em;
             margin-top: 5px;
-            /* Allow line breaks from textarea */
-            white-space: pre-wrap;
+            white-space: pre-wrap; /* Allows line breaks */
+            text-align: justify;
         }
         .item-skills {
             font-size: 0.9em;
@@ -95,102 +104,67 @@
     <div class="page">
         
         <header class="resume-header">
-            {% if data.particulars.name %}
-                <h1>{{ data.particulars.name }}</h1>
-            {% endif %}
+            <h1>Candidate Name</h1>
             <div class="contact-info">
-                {% if data.particulars.email %}
-                    <span>{{ data.particulars.email }}</span>
-                {% endif %}
-                {% if data.particulars.country %}
-                    <span>{{ data.particulars.country }}</span>
-                {% endif %}
-                {% if data.particulars.languages %}
-                    <span>Languages: {{ data.particulars.languages | join(', ') }}</span>
-                {% endif %}
-            </div>
-            <div class="contact-info">
-                {% for link in data.particulars.links %}
-                    <span><a href="{{ link }}">{{ link | replace("https://", "") }}</a></span>
-                {% endfor %}
+                <span>email@example.com</span>
+                <span>Location</span>
+                <span>Languages: English</span>
             </div>
         </header>
 
-        {% if data.experiences %}
+        <section class="section">
+            <h2>Professional Summary</h2>
+            <p class="item-description">
+                </p>
+        </section>
+
         <section class="section">
             <h2>Work Experience</h2>
-            {% for exp in data.experiences | sort(attribute='dateStarted', reverse=true) %}
             <div class="item">
                 <div class="item-header">
-                    <h3>{{ exp.title }}</h3>
-                    <span class="duration">
-                        {{ exp.dateStarted }} to
-                        {% if exp.dateEnded == 'Present' %}Present
-                        {% elif exp.dateEnded %}{{ exp.dateEnded }}
-                        {% endif %}
-                    </span>
+                    <h3>Job Title</h3>
+                    <span class="duration">Date Started to Present</span>
                 </div>
-                <div class="item-subheader">{{ exp.company }}</div>
-                <p class="item-description">{{ exp.jobDescription }}</p>
-                {% if exp.skills %}
-                    <p class="item-skills"><strong>Skills:</strong> {{ exp.skills | join(', ') }}</p>
-                {% endif %}
+                <div class="item-subheader">Company Name</div>
+                <p class="item-description">Job description...</p>
+                <p class="item-skills"><strong>Skills:</strong> Skill 1, Skill 2</p>
             </div>
-            {% endfor %}
         </section>
-        {% endif %}
         
-        {% if data.education %}
         <section class="section">
             <h2>Education</h2>
-            {% for edu in data.education | sort(attribute='dateStarted', reverse=true) %}
             <div class="item">
                 <div class="item-header">
-                    <h3>{{ edu.nameOfCertificate }}</h3>
-                    <span class="duration">
-                        {{ edu.dateStarted }} to
-                        {% if edu.dateAttained == 'Present' %}Present
-                        {% elif edu.dateAttained %}{{ edu.dateAttained }}
-                        {% endif %}
-                    </span>
+                    <h3>Certificate Name</h3>
+                    <span class="duration">Date Started to Date Attained</span>
                 </div>
-                <div class="item-subheader">{{ edu.nameOfInstitution }}</div>
+                <div class="item-subheader">Institution Name</div>
             </div>
-            {% endfor %}
         </section>
-        {% endif %}
         
-        {% if data.projects %}
         <section class="section">
             <h2>Professional Projects</h2>
-            {% for proj in data.projects | sort(attribute='projectDate', reverse=true) %}
             <div class="item">
                 <div class="item-header">
-                    <h3>{{ proj.projectName }}</h3>
-                    <span class="duration">{{ proj.projectDate }}</span>
+                    <h3>Project Name</h3>
+                    <span class="duration">Project Date</span>
                 </div>
-                <div class="item-subheader">{{ proj.companyName }}</div>
-                <p class="item-description">{{ proj.projectDescription }}</p>
+                <div class="item-subheader">Company Name</div>
+                <p class="item-description">Project description...</p>
             </div>
-            {% endfor %}
         </section>
-        {% endif %}
 
-        {% if data.awards %}
         <section class="section">
             <h2>Awards and Honours</h2>
-            {% for awd in data.awards | sort(attribute='awardDate', reverse=true) %}
             <div class="item">
                 <div class="item-header">
-                    <h3>{{ awd.awardName }}</h3>
-                    <span class="duration">{{ awd.awardDate }}</span>
+                    <h3>Award Name</h3>
+                    <span class="duration">Award Date</span>
                 </div>
-                <div class="item-subheader">{{ awd.awardInstitution }}</div>
-                <p class="item-description">{{ awd.awardDescription }}</p>
+                <div class="item-subheader">Award Institution</div>
+                <p class="item-description">Award description...</p>
             </div>
-            {% endfor %}
         </section>
-        {% endif %}
         
     </div>
 </body>
