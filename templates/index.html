@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Profile Builder</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6; background-color: #f4f7f6; color: #333;
+            margin: 0; padding: 20px;
+        }
+        .container {
+            max-width: 900px; margin: 0 auto; background: #ffffff;
+            padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #eee; padding-bottom: 10px;
+        }
+        .header h1 { border-bottom: none; padding-bottom: 0; margin: 0; }
+        a.logout-btn {
+            background-color: #dc3545; color: white; text-decoration: none;
+            padding: 8px 14px; border-radius: 5px; font-size: 14px; font-weight: 500;
+        }
+        a.logout-btn:hover { background-color: #c82333; }
+        
+        .particulars-header {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        #particularsDisplay {
+            background: #fafafa; border: 1px solid #e0e0e0;
+            border-radius: 8px; padding: 15px 25px; margin-bottom: 20px;
+        }
+        #particularsDisplay p { margin: 8px 0; }
+        #particularsDisplay h3 { margin-top: 0; }
+        
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+        button {
+            background-color: #007bff; color: white; border: none;
+            padding: 12px 18px; border-radius: 5px; cursor: pointer;
+            font-size: 16px; transition: background-color 0.2s;
+        }
+        button:hover { background-color: #0056b3; }
+        button.secondary { background-color: #6c757d; }
+        button.secondary:hover { background-color: #5a6268; }
+        button.edit-btn {
+             background-color: #ffc107; color: #333;
+             font-size: 14px; padding: 8px 12px;
+        }
+        button.edit-btn:hover { background-color: #e0a800; }
+        
+        form.data-form {
+            display: none; background: #fdfdfd; border: 1px solid #ddd;
+            border-radius: 8px; padding: 20px; margin-top: 20px;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="date"],
+        .form-group textarea {
+            width: 100%; padding: 10px; border: 1px solid #ccc;
+            border-radius: 5px; box-sizing: border-box; 
+        }
+        .date-options { display: flex; align-items: center; gap: 15px; }
+        .date-options input[type="date"] { flex-grow: 1; }
+        .checkbox-group { display: flex; align-items: center; gap: 5px; }
+        .checkbox-group label { margin-bottom: 0; font-weight: normal; }
+        .form-buttons { margin-top: 20px; }
+        .profile-display { margin-top: 25px; }
+        .data-card {
+            border: 1px solid #e0e0e0; background: #fafafa;
+            border-radius: 5px; padding: 15px; margin-bottom: 15px;
+            position: relative; /* For positioning buttons */
+        }
+        .data-card h3 { margin-top: 0; }
+        
+        /* --- NEW: Card Control Buttons --- */
+        .card-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+        }
+        .card-controls button {
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .card-controls .edit-card-btn {
+            background-color: #007bff;
+        }
+        .card-controls .delete-card-btn {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Profile: {{ profile_name }}</h1>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+        
+        <div class="profile-display">
+            <div class="particulars-header">
+                <h2>Personal Particulars</h2>
+                <button id="showParticularsFormBtn" class="edit-btn">Edit</button>
+            </div>
+            <div id="particularsDisplay"></div>
+        </div>
+        
+        <form id="particularsForm" class="data-form">
+            <h2>Edit Personal Particulars</h2>
+            <div class="form-group"><label for="partName">Name</label><input type="text" id="partName"></div>
+            <div class="form-group"><label for="partEmail">Email</label><input type="email" id="partEmail"></div>
+            <div class="form-group"><label for="partCountry">Country Based In</label><input type="text" id="partCountry"></div>
+            <div class="form-group"><label for="partLinks">Links (comma-separated)</label><input type="text" id="partLinks" placeholder="e.g., https://linkedin.com/..., https://github.com/..."></div>
+            <div class="form-group"><label for="partLanguages">Language Proficiency (comma-separated)</label><input type="text" id="partLanguages" placeholder="e.g., English, Mandarin, Spanish"></div>
+            <div class="form-buttons"><button type="submit">Save Particulars</button><button type="button" id="cancelParticularsBtn" class="secondary">Cancel</button></div>
+        </form>
+
+        <hr> 
+
+        <div class="controls">
+            <button id="showExperienceFormBtn">Add New Work Experience</button>
+            <button id="showEducationFormBtn" class="secondary">Add New Education</button>
+            <button id="showProjectFormBtn" class="secondary">Add New Project</button>
+            <button id="showAwardFormBtn" class="secondary">Add New Award</button>
+        </div>
+
+        <form id="experienceForm" class="data-form">
+            <h2>New Work Experience</h2>
+            <input type="hidden" id="experienceEditId">
+            <div class="form-group"><label for="title">Job Title</label><input type="text" id="title" required></div>
+            <div class="form-group"><label for="company">Company</label><input type="text" id="company" required></div>
+            <div class="form-group"><label for="dateStarted">Date Started</label><input type="date" id="dateStarted" required></div>
+            <div class="form-group">
+                <label>Date Ended</label>
+                <div class="date-options">
+                    <input type="date" id="dateEnded">
+                    <div class="checkbox-group"><input type="checkbox" id="dateEndedPresent"><label for="dateEndedPresent">Present</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="dateEndedNone"><label for="dateEndedNone">No End Date</label></div>
+                </div>
+            </div>
+            <div class="form-group"><label for="jobDescription">Job Description</label><textarea id="jobDescription" rows="4"></textarea></div>
+            <div class="form-group"><label for="skills">Skills Obtained (comma-separated)</label><input type="text" id="skills" placeholder="e.g., Python, JavaScript, Project Management"></div>
+            <div class="form-buttons"><button type="submit">Add to Profile</button><button type="button" id="cancelExperienceBtn" class="secondary">Cancel</button></div>
+        </form>
+
+        <form id="educationForm" class="data-form">
+            <h2>New Education</h2>
+            <input type="hidden" id="educationEditId">
+            <div class="form-group"><label for="certName">Name of Certificate/Degree</label><input type="text" id="certName" required></div>
+            <div class="form-group"><label for="institution">Name of Institution</label><input type="text" id="institution" required></div>
+            <div class="form-group"><label for="eduDateStarted">Date Started</label><input type="date" id="eduDateStarted" required></div>
+            <div class="form-group">
+                <label>Date Attained</label>
+                 <div class="date-options">
+                    <input type="date" id="dateAttained">
+                    <div class="checkbox-group"><input type="checkbox" id="dateAttainedPresent"><label for="dateAttainedPresent">Present</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="dateAttainedNone"><label for="dateAttainedNone">No End Date</label></div>
+                </div>
+            </div>
+            <div class="form-buttons"><button type="submit">Add Education</button><button type="button" id="cancelEducationBtn" class="secondary">Cancel</button></div>
+        </form>
+
+        <form id="projectForm" class="data-form">
+            <h2>New Project</h2>
+            <input type="hidden" id="projectEditId">
+            <div class="form-group"><label for="projectName">Project Name</label><input type="text" id="projectName" required></div>
+            <div class="form-group"><label for="projectCompany">Company Name</label><input type="text" id="projectCompany" required></div>
+            <div class="form-group"><label for="projectDate">Date of Project</label><input type="date" id="projectDate" required></div>
+            <div class="form-group"><label for="projectDescription">Description of Project</label><textarea id="projectDescription" rows="4"></textarea></div>
+            <div class="form-buttons"><button type="submit">Add Project</button><button type="button" id="cancelProjectBtn" class="secondary">Cancel</button></div>
+        </form>
+        
+        <form id="awardForm" class="data-form">
+            <h2>New Award or Honour</h2>
+            <input type="hidden" id="awardEditId">
+            <div class="form-group"><label for="awardName">Award Name</label><input type="text" id="awardName" required></div>
+            <div class="form-group"><label for="awardInstitution">Award Institution</label><input type="text" id="awardInstitution" required></div>
+            <div class="form-group"><label for="awardDate">Date Received</label><input type="date" id="awardDate" required></div>
+            <div class="form-group"><label for="awardDescription">Description of Award</label><textarea id="awardDescription" rows="3"></textarea></div>
+            <div class="form-buttons"><button type="submit">Add Award</button><button type="button" id="cancelAwardBtn" class="secondary">Cancel</button></div>
+        </form>
+
+        <div class="profile-display"><h2>Saved Experiences</h2><div id="experienceDisplay"></div></div>
+        <div class="profile-display"><h2>Saved Education</h2><div id="educationDisplay"></div></div>
+        <div class="profile-display"><h2>Saved Projects</h2><div id="projectDisplay"></div></div>
+        <div class="profile-display"><h2>Awards and Honours</h2><div id="awardDisplay"></div></div>
+    </div>
+
+    <script>
+        // Load data from Flask
+        let profile_data = {{ profile_data | tojson }};
+        let particulars = profile_data.particulars;
+        let experiences = profile_data.experiences;
+        let education = profile_data.education;
+        let projects = profile_data.projects;
+        let awards = profile_data.awards;
+
+        // Get Particulars elements
+        const showParticularsFormBtn = document.getElementById('showParticularsFormBtn');
+        const particularsForm = document.getElementById('particularsForm');
+        const cancelParticularsBtn = document.getElementById('cancelParticularsBtn');
+        const particularsDisplay = document.getElementById('particularsDisplay');
+
+        // Get Experience elements
+        const showExperienceFormBtn = document.getElementById('showExperienceFormBtn');
+        const experienceForm = document.getElementById('experienceForm');
+        const cancelExperienceBtn = document.getElementById('cancelExperienceBtn');
+        const experienceDisplay = document.getElementById('experienceDisplay');
+        
+        // Get Education elements
+        const showEducationFormBtn = document.getElementById('showEducationFormBtn');
+        const educationForm = document.getElementById('educationForm');
+        const cancelEducationBtn = document.getElementById('cancelEducationBtn');
+        const educationDisplay = document.getElementById('educationDisplay');
+        
+        // Get Project elements
+        const showProjectFormBtn = document.getElementById('showProjectFormBtn');
+        const projectForm = document.getElementById('projectForm');
+        const cancelProjectBtn = document.getElementById('cancelProjectBtn');
+        const projectDisplay = document.getElementById('projectDisplay');
+
+        // Get Award elements
+        const showAwardFormBtn = document.getElementById('showAwardFormBtn');
+        const awardForm = document.getElementById('awardForm');
+        const cancelAwardBtn = document.getElementById('cancelAwardBtn');
+        const awardDisplay = document.getElementById('awardDisplay');
+
+        // --- Date option logic (unchanged) ---
+        function setupDateOptions(dateInputId, presentCheckboxId, noneCheckboxId) {
+            const dateInput = document.getElementById(dateInputId);
+            const presentCheckbox = document.getElementById(presentCheckboxId);
+            const noneCheckbox = document.getElementById(noneCheckboxId);
+            if (!dateInput || !presentCheckbox || !noneCheckbox) return; 
+            dateInput.addEventListener('input', () => { presentCheckbox.checked = false; noneCheckbox.checked = false; });
+            presentCheckbox.addEventListener('change', () => {
+                if (presentCheckbox.checked) { noneCheckbox.checked = false; dateInput.value = ''; dateInput.disabled = true; } 
+                else { dateInput.disabled = false; }
+            });
+            noneCheckbox.addEventListener('change', () => {
+                 if (noneCheckbox.checked) { presentCheckbox.checked = false; dateInput.value = ''; dateInput.disabled = true; } 
+                 else { dateInput.disabled = false; }
+            });
+        }
+        setupDateOptions('dateEnded', 'dateEndedPresent', 'dateEndedNone');
+        setupDateOptions('dateAttained', 'dateAttainedPresent', 'dateAttainedNone');
+        
+        // --- Initial Load ---
+        updateParticularsDisplay();
+        updateExperienceDisplay();
+        updateEducationDisplay();
+        updateProjectDisplay();
+        updateAwardDisplay();
+
+        // Helper to hide all forms
+        function hideAllForms() {
+            particularsForm.style.display = 'none';
+            experienceForm.style.display = 'none';
+            educationForm.style.display = 'none';
+            projectForm.style.display = 'none';
+            awardForm.style.display = 'none'; 
+        }
+
+        // --- NEW: Generic Delete Function ---
+        function handleDelete(itemType, id) {
+            if (!confirm('Are you sure you want to delete this item?')) return;
+            
+            fetch('/delete_item', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ itemType: itemType, id: id }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Remove from local array and redraw
+                    if (itemType === 'experiences') {
+                        experiences = experiences.filter(i => i.id !== id);
+                        updateExperienceDisplay();
+                    } else if (itemType === 'education') {
+                        education = education.filter(i => i.id !== id);
+                        updateEducationDisplay();
+                    } else if (itemType === 'projects') {
+                        projects = projects.filter(i => i.id !== id);
+                        updateProjectDisplay();
+                    } else if (itemType === 'awards') {
+                        awards = awards.filter(i => i.id !== id);
+                        updateAwardDisplay();
+                    }
+                } else { throw new Error(data.message); }
+            })
+            .catch(error => alert('Error: ' + error.message));
+        }
+
+        // --- Particulars Section ---
+        showParticularsFormBtn.addEventListener('click', () => {
+            hideAllForms();
+            document.getElementById('partName').value = particulars.name || '';
+            document.getElementById('partEmail').value = particulars.email || '';
+            document.getElementById('partCountry').value = particulars.country || '';
+            document.getElementById('partLinks').value = (particulars.links || []).join(', ');
+            document.getElementById('partLanguages').value = (particulars.languages || []).join(', ');
+            particularsForm.style.display = 'block';
+        });
+        cancelParticularsBtn.addEventListener('click', () => { particularsForm.style.display = 'none'; });
+
+        particularsForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const splitAndTrim = (str) => str.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            const updatedParticulars = {
+                name: document.getElementById('partName').value,
+                email: document.getElementById('partEmail').value,
+                country: document.getElementById('partCountry').value,
+                links: splitAndTrim(document.getElementById('partLinks').value),
+                languages: splitAndTrim(document.getElementById('partLanguages').value)
+            };
+            fetch('/update_particulars', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ particulars: updatedParticulars }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    particulars = updatedParticulars;
+                    updateParticularsDisplay();
+                    particularsForm.style.display = 'none';
+                } else { throw new Error(data.message); }
+            })
+            .catch(error => alert('Error: ' + error.message));
+        });
+
+        // --- Experience Section ---
+        function showExperienceForm(item = null) {
+            hideAllForms();
+            // Reset state
+            experienceForm.reset();
+            document.getElementById('dateEnded').disabled = false;
+            document.getElementById('dateEndedPresent').checked = false;
+            document.getElementById('dateEndedNone').checked = false;
+            
+            const submitBtn = experienceForm.querySelector('button[type="submit"]');
+            
+            if (item) { // Edit Mode
+                document.getElementById('experienceEditId').value = item.id;
+                document.getElementById('title').value = item.title;
+                document.getElementById('company').value = item.company;
+                document.getElementById('dateStarted').value = item.dateStarted;
+                document.getElementById('jobDescription').value = item.jobDescription;
+                document.getElementById('skills').value = (item.skills || []).join(', ');
+                
+                if (item.dateEnded === 'Present') {
+                    document.getElementById('dateEndedPresent').checked = true;
+                    document.getElementById('dateEnded').disabled = true;
+                } else if (item.dateEnded === null) {
+                    document.getElementById('dateEndedNone').checked = true;
+                    document.getElementById('dateEnded').disabled = true;
+                } else {
+                    document.getElementById('dateEnded').value = item.dateEnded;
+                }
+                submitBtn.textContent = 'Update Experience';
+            } else { // Add Mode
+                document.getElementById('experienceEditId').value = '';
+                submitBtn.textContent = 'Add to Profile';
+            }
+            experienceForm.style.display = 'block';
+        }
+        showExperienceFormBtn.addEventListener('click', () => showExperienceForm(null));
+        cancelExperienceBtn.addEventListener('click', () => { experienceForm.style.display = 'none'; });
+        experienceDisplay.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-card-btn')) {
+                const id = e.target.dataset.id;
+                const item = experiences.find(i => i.id === id);
+                if (item) showExperienceForm(item);
+            }
+            if (e.target.classList.contains('delete-card-btn')) {
+                handleDelete('experiences', e.target.dataset.id);
+            }
+        });
+        experienceForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const id = document.getElementById('experienceEditId').value;
+            const isEdit = (id !== '');
+            
+            let endDateValue;
+            if (document.getElementById('dateEndedPresent').checked) endDateValue = 'Present';
+            else if (document.getElementById('dateEndedNone').checked) endDateValue = null;
+            else endDateValue = document.getElementById('dateEnded').value || null;
+            
+            const itemData = {
+                id: id || null,
+                title: document.getElementById('title').value, company: document.getElementById('company').value,
+                dateStarted: document.getElementById('dateStarted').value, dateEnded: endDateValue,
+                jobDescription: document.getElementById('jobDescription').value,
+                skills: document.getElementById('skills').value.split(',').map(s => s.trim()).filter(s => s.length > 0)
+            };
+
+            const url = isEdit ? '/update_item' : '/add';
+            const body = isEdit ? JSON.stringify({ itemType: 'experiences', item: itemData }) : JSON.stringify({ experience: itemData });
+            
+            fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: body })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (isEdit) {
+                        const index = experiences.findIndex(i => i.id === id);
+                        if (index > -1) experiences[index] = itemData;
+                    } else {
+                        experiences.push(data.newItem); // Add new item with ID from server
+                    }
+                    updateExperienceDisplay();
+                    experienceForm.style.display = 'none';
+                } else { throw new Error(data.message); }
+            })
+            .catch(error => alert('Error: ' + error.message));
+        });
+
+        // --- Education Section ---
+        function showEducationForm(item = null) {
+            hideAllForms();
+            educationForm.reset();
+            document.getElementById('dateAttained').disabled = false;
+            document.getElementById('dateAttainedPresent').checked = false;
+            document.getElementById('dateAttainedNone').checked = false;
+            
+            const submitBtn = educationForm.querySelector('button[type="submit"]');
+            
+            if (item) { // Edit Mode
+                document.getElementById('educationEditId').value = item.id;
+                document.getElementById('certName').value = item.nameOfCertificate;
+                document.getElementById('institution').value = item.nameOfInstitution;
+                document.getElementById('eduDateStarted').value = item.dateStarted;
+                
+                if (item.dateAttained === 'Present') {
+                    document.getElementById('dateAttainedPresent').checked = true;
+                    document.getElementById('dateAttained').disabled = true;
+                } else if (item.dateAttained === null) {
+                    document.getElementById('dateAttainedNone').checked = true;
+                    document.getElementById('dateAttained').disabled = true;
+                } else {
+                    document.getElementById('dateAttained').value = item.dateAttained;
+                }
+                submitBtn.textContent = 'Update Education';
+            } else { // Add Mode
+                document.getElementById('educationEditId').value = '';
+                submitBtn.textContent = 'Add Education';
+            }
+            educationForm.style.display = 'block';
+        }
+        showEducationFormBtn.addEventListener('click', () => showEducationForm(null));
+        cancelEducationBtn.addEventListener('click', () => { educationForm.style.display = 'none'; });
+        educationDisplay.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-card-btn')) {
+                const id = e.target.dataset.id;
+                const item = education.find(i => i.id === id);
+                if (item) showEducationForm(item);
+            }
+            if (e.target.classList.contains('delete-card-btn')) {
+                handleDelete('education', e.target.dataset.id);
+            }
+        });
+        educationForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const id = document.getElementById('educationEditId').value;
+            const isEdit = (id !== '');
+            
+            let attainedDateValue;
+            if (document.getElementById('dateAttainedPresent').checked) attainedDateValue = 'Present';
+            else if (document.getElementById('dateAttainedNone').checked) attainedDateValue = null;
+            else attainedDateValue = document.getElementById('dateAttained').value || null;
+            
+            const itemData = {
+                id: id || null,
+                nameOfCertificate: document.getElementById('certName').value,
+                nameOfInstitution: document.getElementById('institution').value,
+                dateStarted: document.getElementById('eduDateStarted').value,
+                dateAttained: attainedDateValue
+            };
+            
+            const url = isEdit ? '/update_item' : '/add_education';
+            const body = isEdit ? JSON.stringify({ itemType: 'education', item: itemData }) : JSON.stringify({ education: itemData });
+
+            fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: body })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (isEdit) {
+                        const index = education.findIndex(i => i.id === id);
+                        if (index > -1) education[index] = itemData;
+                    } else {
+                        education.push(data.newItem);
+                    }
+                    updateEducationDisplay();
+                    educationForm.style.display = 'none';
+                } else { throw new Error(data.message); }
+            })
+            .catch(error => alert('Error: ' + error.message));
+        });
+        
+        // --- Project Section ---
+        function showProjectForm(item = null) {
+            hideAllForms();
+            projectForm.reset();
+            const submitBtn = projectForm.querySelector('button[type="submit"]');
+            if (item) { // Edit Mode
+                document.getElementById('projectEditId').value = item.id;
+                document.getElementById('projectName').value = item.projectName;
+                document.getElementById('projectCompany').value = item.companyName;
+                document.getElementById('projectDate').value = item.projectDate;
+                document.getElementById('projectDescription').value = item.projectDescription;
+                submitBtn.textContent = 'Update Project';
+            } else { // Add Mode
+                document.getElementById('projectEditId').value = '';
+                submitBtn.textContent = 'Add Project';
+            }
+            projectForm.style.display = 'block';
+        }
+        showProjectFormBtn.addEventListener('click', () => showProjectForm(null));
+        cancelProjectBtn.addEventListener('click', () => { projectForm.style.display = 'none'; });
+        projectDisplay.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-card-btn')) {
+                const id = e.target.dataset.id;
+                const item = projects.find(i => i.id === id);
+                if (item) showProjectForm(item);
+            }
+            if (e.target.classList.contains('delete-card-btn')) {
+                handleDelete('projects', e.target.dataset.id);
+            }
+        });
+        projectForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const id = document.getElementById('projectEditId').value;
+            const isEdit = (id !== '');
+            const itemData = {
+                id: id || null,
+                projectName: document.getElementById('projectName').value,
+                companyName: document.getElementById('projectCompany').value,
+                projectDate: document.getElementById('projectDate').value,
+                projectDescription: document.getElementById('projectDescription').value
+            };
+            const url = isEdit ? '/update_item' : '/add_project';
+            const body = isEdit ? JSON.stringify({ itemType: 'projects', item: itemData }) : JSON.stringify({ project: itemData });
+            fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: body })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (isEdit) {
+                        const index = projects.findIndex(i => i.id === id);
+                        if (index > -1) projects[index] = itemData;
+                    } else {
+                        projects.push(data.newItem);
+                    }
+                    updateProjectDisplay();
+                    projectForm.style.display = 'none';
+                } else { throw new Error(data.message); }
+            })
+            .catch(error => alert('Error: ' + error.message));
+        });
+        
+        // --- Award Section ---
+        function showAwardForm(item = null) {
+            hideAllForms();
+            awardForm.reset();
+            const submitBtn = awardForm.querySelector('button[type="submit"]');
+            if (item) { // Edit Mode
+                document.getElementById('awardEditId').value = item.id;
+                document.getElementById('awardName').value = item.awardName;
+                document.getElementById('awardInstitution').value = item.awardInstitution;
+                document.getElementById('awardDate').value = item.awardDate;
+                document.getElementById('awardDescription').value = item.awardDescription;
+                submitBtn.textContent = 'Update Award';
+            } else { // Add Mode
+                document.getElementById('awardEditId').value = '';
+                submitBtn.textContent = 'Add Award';
+            }
+            awardForm.style.display = 'block';
+        }
+        showAwardFormBtn.addEventListener('click', () => showAwardForm(null));
+        cancelAwardBtn.addEventListener('click', () => { awardForm.style.display = 'none'; });
+        awardDisplay.addEventListener('click', (e) => {
+            if (e.target.classList.contains('edit-card-btn')) {
+                const id = e.target.dataset.id;
+                const item = awards.find(i => i.id === id);
+                if (item) showAwardForm(item);
+            }
+            if (e.target.classList.contains('delete-card-btn')) {
+                handleDelete('awards', e.target.dataset.id);
+            }
+        });
+        awardForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const id = document.getElementById('awardEditId').value;
+            const isEdit = (id !== '');
+            const itemData = {
+                id: id || null,
+                awardName: document.getElementById('awardName').value,
+                awardInstitution: document.getElementById('awardInstitution').value,
+                awardDate: document.getElementById('awardDate').value,
+                awardDescription: document.getElementById('awardDescription').value
+            };
+            const url = isEdit ? '/update_item' : '/add_award';
+            const body = isEdit ? JSON.stringify({ itemType: 'awards', item: itemData }) : JSON.stringify({ award: itemData });
+            fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: body })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (isEdit) {
+                        const index = awards.findIndex(i => i.id === id);
+                        if (index > -1) awards[index] = itemData;
+                    } else {
+                        awards.push(data.newItem);
+                    }
+                    updateAwardDisplay();
+                    awardForm.style.display = 'none';
+                } else { throw new Error(data.message); }
+            })
+            .catch(error => alert('Error: ' + error.message));
+        });
+
+        // --- Display Update Functions (Now add Edit/Delete buttons) ---
+
+        function updateParticularsDisplay() {
+            particularsDisplay.innerHTML = '';
+            if (particulars.name) {
+                const nameHeader = document.createElement('h3');
+                nameHeader.textContent = particulars.name;
+                particularsDisplay.appendChild(nameHeader);
+            }
+            const createP = (strong, text) => {
+                if (text && text.length > 0) {
+                    const p = document.createElement('p');
+                    p.innerHTML = `<strong>${strong}:</strong> ${text}`;
+                    return p;
+                } return null;
+            };
+            const emailP = createP('Email', particulars.email);
+            if (emailP) particularsDisplay.appendChild(emailP);
+            const countryP = createP('Based In', particulars.country);
+            if (countryP) particularsDisplay.appendChild(countryP);
+            if (particulars.languages && particulars.languages.length > 0) {
+                const langP = createP('Languages', particulars.languages.join(', '));
+                if (langP) particularsDisplay.appendChild(langP);
+            }
+            if (particulars.links && particulars.links.length > 0) {
+                const p = document.createElement('p');
+                p.innerHTML = `<strong>Links:</strong> `;
+                particulars.links.forEach((link, index) => {
+                    const a = document.createElement('a'); a.href = link;
+                    a.textContent = link.length > 50 ? link.substring(0, 50) + '...' : link;
+                    a.target = '_blank'; p.appendChild(a);
+                    if (index < particulars.links.length - 1) p.append(', ');
+                });
+                particularsDisplay.appendChild(p);
+            }
+            if (particularsDisplay.children.length === 0) {
+                particularsDisplay.innerHTML = '<p>No personal details added yet. Click "Edit" to add them.</p>';
+            }
+        }
+
+        function updateExperienceDisplay() {
+            experienceDisplay.innerHTML = '';
+            experiences.sort((a, b) => new Date(b.dateStarted) - new Date(a.dateStarted));
+            if (experiences.length === 0) {
+                experienceDisplay.innerHTML = '<p>No experiences added yet.</p>'; return;
+            }
+            experiences.forEach(exp => {
+                const card = document.createElement('div'); card.className = 'data-card';
+                let durationText;
+                if (exp.dateEnded === 'Present') durationText = `${exp.dateStarted} to Present`;
+                else if (exp.dateEnded) durationText = `${exp.dateStarted} to ${exp.dateEnded}`;
+                else durationText = exp.dateStarted;
+                card.innerHTML = `
+                    <div class="card-controls">
+                        <button class="edit-card-btn" data-id="${exp.id}">Edit</button>
+                        <button class="delete-card-btn" data-id="${exp.id}">Delete</button>
+                    </div>
+                    <h3>${exp.title}</h3>
+                    <p><strong>Company:</strong> ${exp.company}</p>
+                    <p><strong>Duration:</strong> ${durationText}</p>
+                    <p>${exp.jobDescription}</p>
+                    <p><strong>Skills:</strong> ${exp.skills.join(', ')}</p>`;
+                experienceDisplay.appendChild(card);
+            });
+        }
+        
+        function updateEducationDisplay() {
+            educationDisplay.innerHTML = '';
+            education.sort((a, b) => new Date(b.dateStarted) - new Date(a.dateStarted));
+            if (education.length === 0) {
+                educationDisplay.innerHTML = '<p>No education added yet.</p>'; return;
+            }
+            education.forEach(edu => {
+                const card = document.createElement('div'); card.className = 'data-card';
+                let durationText;
+                if (edu.dateAttained === 'Present') durationText = `${edu.dateStarted} to Present`;
+                else if (edu.dateAttained) durationText = `${edu.dateStarted} to ${edu.dateAttained}`;
+                else durationText = edu.dateStarted;
+                card.innerHTML = `
+                    <div class="card-controls">
+                        <button class="edit-card-btn" data-id="${edu.id}">Edit</button>
+                        <button class="delete-card-btn" data-id="${edu.id}">Delete</button>
+                    </div>
+                    <h3>${edu.nameOfCertificate}</h3>
+                    <p><strong>Institution:</strong> ${edu.nameOfInstitution}</p>
+                    <p><strong>Duration:</strong> ${durationText}</p>`;
+                educationDisplay.appendChild(card);
+            });
+        }
+        
+        function updateProjectDisplay() {
+            projectDisplay.innerHTML = '';
+            projects.sort((a, b) => new Date(b.projectDate) - new Date(a.projectDate));
+            if (projects.length === 0) {
+                projectDisplay.innerHTML = '<p>No projects added yet.</p>'; return;
+            }
+            projects.forEach(proj => {
+                const card = document.createElement('div'); card.className = 'data-card';
+                card.innerHTML = `
+                    <div class="card-controls">
+                        <button class="edit-card-btn" data-id="${proj.id}">Edit</button>
+                        <button class="delete-card-btn" data-id="${proj.id}">Delete</button>
+                    </div>
+                    <h3>${proj.projectName}</h3>
+                    <p><strong>Company:</strong> ${proj.companyName}</p>
+                    <p><strong>Date:</strong> ${proj.projectDate}</p>
+                    <p>${proj.projectDescription}</p>`;
+                projectDisplay.appendChild(card);
+            });
+        }
+        
+        function updateAwardDisplay() {
+            awardDisplay.innerHTML = '';
+            awards.sort((a, b) => new Date(b.awardDate) - new Date(a.awardDate));
+            if (awards.length === 0) {
+                awardDisplay.innerHTML = '<p>No awards added yet.</p>'; return;
+            }
+            awards.forEach(awd => {
+                const card = document.createElement('div'); card.className = 'data-card';
+                card.innerHTML = `
+                    <div class="card-controls">
+                        <button class="edit-card-btn" data-id="${awd.id}">Edit</button>
+                        <button class="delete-card-btn" data-id="${awd.id}">Delete</button>
+                    </div>
+                    <h3>${awd.awardName}</h3>
+                    <p><strong>Institution:</strong> ${awd.awardInstitution}</p>
+                    <p><strong>Date:</strong> ${awd.awardDate}</p>
+                    <p>${awd.awardDescription}</p>`;
+                awardDisplay.appendChild(card);
+            });
+        }
+    </script>
+
+</body>
+</html>

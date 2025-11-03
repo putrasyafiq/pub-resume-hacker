@@ -1,0 +1,30 @@
+{
+    "particulars": {
+        "name": "Putra Syafiq Bin Roslan",
+        "email": "putrasyafiqbr@gmail.com",
+        "links": [],
+        "languages": [
+            "English",
+            "Malay"
+        ],
+        "country": "Singapore"
+    },
+    "experiences": [
+        {
+            "id": "e6712af9-bdff-4dd1-835e-a95bc8699a10",
+            "title": "SIO",
+            "company": "SPF",
+            "dateStarted": "2022-02-14",
+            "dateEnded": "2025-03-30",
+            "jobDescription": "aaa",
+            "skills": [
+                "Investigation",
+                "Legal",
+                "Enforcement"
+            ]
+        }
+    ],
+    "education": [],
+    "projects": [],
+    "awards": []
+}
