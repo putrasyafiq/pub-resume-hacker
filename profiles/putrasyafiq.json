@@ -12,19 +12,89 @@
     "experiences": [
         {
             "id": "e6712af9-bdff-4dd1-835e-a95bc8699a10",
-            "title": "SIO",
-            "company": "SPF",
+            "title": "Senior Investigation Officer",
+            "company": "Singapore Police Force",
             "dateStarted": "2022-02-14",
             "dateEnded": "2025-03-30",
-            "jobDescription": "aaa",
+            "jobDescription": "As a Senior Investigation Officer in the Police, I have been exposed to various crime topology ranging from harassment and violence to frauds and scams. I also dealt with non criminal cases such as missing persons and death. I utilized critical analytical acumen to perform in-depth investigation into cases, achieving a 100% success in prosecution cases. I am also equipped with time management skills in managing over 200 active investigations, honing my skills in triaging and prioritization. ",
             "skills": [
                 "Investigation",
                 "Legal",
-                "Enforcement"
+                "Enforcement",
+                "Analysis",
+                "Report Writing",
+                "Stakeholder Management",
+                "Time Management",
+                "Cross Functional",
+                "Prioritzation"
+            ]
+        },
+        {
+            "id": "c6abf14f-3314-453f-b675-1890bb4e6846",
+            "title": "Cloud Technology Trainee",
+            "company": "Google Asia Pacific Pte Ltd",
+            "dateStarted": "2025-04-01",
+            "dateEnded": "Present",
+            "jobDescription": "As a Data Analytics Specialist Trainee in the Customer Engineering South East Asia team, I analyze clients' data value chain needs and create optimized solutions for them in Google Cloud Platform, utilizing big data warehouses such as BigQuery, and managed data pipelines such as Airflow and Dataproc. I am exposed to various industries of clienteles such as telecommunications, public sector, airports and finance. I built proof of concepts utilizing a mix of languages such as Python, HTML, Javascript, SQL to present to C-suite clients, scoring technical trials for the team.",
+            "skills": [
+                "BigQuery",
+                "Data Engineering",
+                "Data Analytics",
+                "API",
+                "Airflow",
+                "Dataproc",
+                "Python",
+                "HTML",
+                "Javascript",
+                "SQL"
+            ]
+        },
+        {
+            "id": "f2f73a36-adb2-49d8-a51a-4b9ae7c0353d",
+            "title": "Business Intelligence Developer Intern",
+            "company": "Immigration and Checkpoints Authority Singapore",
+            "dateStarted": "2021-05-01",
+            "dateEnded": "2021-12-01",
+            "jobDescription": "As a Business Intelligence Developer intern in the Business Intelligence Unit of Integrated Checkpoints Command at Immigration and Checkpoints Authority Singapore, I am regularly exposed to the need for optimization within the organization. I built and optimize solutions to replace highly repetitive tasks with automation using VB scripts in Microsoft Office applications. I also built solutions to better track and automate tracking of COVID-19 self-tests done by travellers, reducing the requirement for manpower drastically.",
+            "skills": [
+                "Optimization",
+                "Automation",
+                "VBA",
+                "vb.net"
             ]
         }
     ],
-    "education": [],
-    "projects": [],
+    "education": [
+        {
+            "id": "0ab636d7-602a-48e8-98ce-a24d2cf2ee1b",
+            "nameOfCertificate": "Bachelors of Science in Mathematics and Economics, Minor in Business",
+            "nameOfInstitution": "Nanyang Technological University",
+            "dateStarted": "2018-08-01",
+            "dateAttained": "2022-01-31"
+        },
+        {
+            "id": "b30fdf50-7e13-4671-8c26-780d43ade74b",
+            "nameOfCertificate": "Specialist Diploma in Business Analytics",
+            "nameOfInstitution": "Republic Polytechnic",
+            "dateStarted": "2024-04-01",
+            "dateAttained": "2025-04-01"
+        }
+    ],
+    "projects": [
+        {
+            "id": "c3857d50-f3a9-477e-a183-68b436381bb8",
+            "projectName": "Deploying Agents using ADK on Agentspace",
+            "companyName": "Google Asia Pacific Pte Ltd",
+            "projectDate": "2025-08-01",
+            "projectDescription": "Worked on migrating AI multi-agents agent developed with ADK on Python from local deployment and Cloud Run to Agentspace in Google Cloud Platform"
+        },
+        {
+            "id": "d14e76fe-e2d4-4782-ae7e-d227c2002d32",
+            "projectName": "Image Segmentation and Vector Search",
+            "companyName": "Google Asia Pacific Pte Ltd",
+            "projectDate": "2025-07-01",
+            "projectDescription": "Developed an AI powered solution in Python to break down a complex image into individual components and objects to be analyzed in silo.\nDeveloped a data pipeline to store images as vector embeddings in cloud database.\nDeveloped a search pipeline to enable text to image and image to image searches using vector space and vector search indexes."
+        }
+    ],
     "awards": []
 }

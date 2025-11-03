@@ -6,16 +6,34 @@ from flask import (
     url_for, session, flash, send_from_directory
 )
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename # NEW
+from werkzeug.utils import secure_filename
+
+# --- NEW: Vertex AI Imports ---
+import vertexai
+from vertexai.generative_models import GenerativeModel, GenerationConfig
 
 # --- Configuration ---
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'a-very-secret-random-key-please-change-me' 
 PROFILE_DIR = "profiles"
 PASSWORD_FILE = "passwords.json"
-RESUME_DIR = "resumes" # NEW
+RESUME_DIR = "resumes"
 
-# --- Default Profile Structure ---
+# --- NEW: Vertex AI Setup ---
+# !!! REPLACE WITH YOUR PROJECT DETAILS !!!
+YOUR_PROJECT_ID = "johanesa-playground-326616"
+YOUR_LOCATION = "us-central1"  # e.g., "us-central1"
+
+vertexai.init(project=YOUR_PROJECT_ID, location=YOUR_LOCATION)
+
+# Load the model (Using Flash as it's fast and cost-effective for this)
+model = GenerativeModel("gemini-2.5-flash-lite")
+generation_config = GenerationConfig(
+    temperature=0.2,
+    max_output_tokens=8192 # Increase token limit for full HTML
+)
+
+# --- Default Profile Structure (Unchanged) ---
 DEFAULT_PARTICULARS = {
     "name": "", "email": "", "links": [], "languages": [], "country": ""
 }
@@ -129,22 +147,19 @@ def index():
                            profile_name=profile_name, 
                            profile_data=profile_data)
 
-# --- (Data Endpoints: /update_particulars, /add, /update_item, etc. are unchanged) ---
-# ... (all the add, update, delete endpoints from previous step go here) ...
-# (routes /update_particulars, /add, /add_education, /add_project, /add_award)
-# (routes /update_item, /delete_item)
-# ... (omitted for brevity, but they must be present) ...
-
-# --- NEW: Resume Routes ---
-
+# --- NEW: Helper for Resume Routes ---
 def get_user_resume_dir():
     """Helper to get the user's specific resume folder."""
     if 'profile_name' not in session:
         return None
-    profile_resume_dir = os.path.join(RESUME_DIR, session['profile_name'])
+    # Securely join paths
+    profile_folder = secure_filename(session['profile_name'])
+    profile_resume_dir = os.path.join(RESUME_DIR, profile_folder)
     if not os.path.exists(profile_resume_dir):
         os.makedirs(profile_resume_dir)
     return profile_resume_dir
+
+# --- Resume Routes (MODIFIED) ---
 
 @app.route('/resumes')
 def resumes():
@@ -169,40 +184,104 @@ def view_resume(filename):
     if not profile_resume_dir:
         return "Not found", 404
     
-    # Securely check filename
     secure_name = secure_filename(filename)
     if secure_name != filename:
         return "Invalid filename", 400
 
     return send_from_directory(profile_resume_dir, secure_name)
 
+# --- THIS IS THE NEW, AI-POWERED ROUTE ---
 @app.route('/add_resume', methods=['POST'])
 def add_resume():
-    """Generates a new resume from current data."""
+    """Generates a new resume using AI."""
     if 'profile_name' not in session:
         return redirect(url_for('login'))
         
     profile_name = session['profile_name']
     profile_resume_dir = get_user_resume_dir()
     
+    # 1. Get data from the new form
     resume_name_base = request.form.get('resume_name', 'My Resume')
-    # Make sure it's a safe HTML filename
+    job_description = request.form.get('job_description') # NEW
+    
+    if not job_description:
+        flash('Job description cannot be empty.', 'error')
+        return redirect(url_for('resumes'))
+        
     resume_filename = secure_filename(resume_name_base) + '.html'
     
-    # 1. Load the user's data
+    # 2. Load the user's profile data
     profile_data = load_profile_data(profile_name)
+    profile_json = json.dumps(profile_data)
     
-    # 2. Render the resume template with the data
-    # We pass the data in a 'data' variable to the template
-    rendered_html = render_template('resume_template.html', data=profile_data)
+    # 3. Load the HTML template to use as a style guide for the AI
+    try:
+        with open('templates/resume_template.html', 'r', encoding='utf-8') as f:
+            template_example = f.read()
+    except FileNotFoundError:
+        flash('ERROR: resume_template.html not found.', 'error')
+        return redirect(url_for('resumes'))
+
+    # 4. Create the prompt
+    prompt = f"""
+    You are an expert resume writer and a front-end developer. Your task is to generate a professional, single-page HTML resume, tailored to a specific job description.
+
+    You will be given:
+    1.  **PROFILE_DATA:** A JSON object of the candidate's full profile.
+    2.  **JOB_DESCRIPTION:** The text of the job description they are applying for.
+    3.  **HTML_TEMPLATE:** An example HTML file to use for structure and CSS.
+
+    Your task is to merge these three elements. You must:
+    1.  Analyze the JOB_DESCRIPTION for key skills and requirements.
+    2.  Analyze the PROFILE_DATA to find matching experiences, skills, and projects.
+    3.  Using PROFILE_DATA, generate a new description for every experience, project and award to match the JOB_DESCRIPTION. Ensure that the description includes metrics of how the projects have improved the organizations. If no metrics are found in the original description, estimate the metrics. 
+    4.  Write a new resume, using the newly generated descriptions. Rephrase bullet points to use keywords from the job description.
+    5.  Format the *entire* output as a single, complete HTML file, using the exact structure, class names, and CSS from the HTML_TEMPLATE.
+    6.  The final output must be *only* the HTML code. It must start with `<!DOCTYPE html>` and end with `</html>`. Do not include *any* other text, explanations, or markdown backticks.
+
+    ---
+    PROFILE_DATA:
+    {profile_json}
+    ---
+    JOB_DESCRIPTION:
+    {job_description}
+    ---
+    HTML_TEMPLATE:
+    {template_example}
+    ---
+
+    Now, generate the tailored HTML resume.
+    """
     
-    # 3. Save the rendered HTML to a file
-    filepath = os.path.join(profile_resume_dir, resume_filename)
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(rendered_html)
+    try:
+        # 5. Call the Vertex AI model
+        response = model.generate_content(
+            prompt,
+            generation_config=generation_config
+        )
         
-    flash(f'Successfully generated "{resume_filename}"', 'success')
+        # 6. Clean and save the response
+        ai_generated_html = response.text
+        
+        # Clean up potential markdown backticks (just in case)
+        ai_generated_html = ai_generated_html.strip().replace("```html", "").replace("```", "").strip()
+        
+        if not ai_generated_html.startswith("<!DOCTYPE html>"):
+            raise Exception("AI did not return valid HTML. Response: " + ai_generated_html[:200])
+
+        # 7. Save the rendered HTML to a file
+        filepath = os.path.join(profile_resume_dir, resume_filename)
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(ai_generated_html)
+            
+        flash(f'Successfully generated AI-tailored resume "{resume_filename}"', 'success')
+        
+    except Exception as e:
+        print(f"Error generating resume: {e}")
+        flash(f'Error generating AI resume: {e}', 'error')
+        
     return redirect(url_for('resumes'))
+
 
 @app.route('/delete_resume', methods=['POST'])
 def delete_resume():
@@ -213,7 +292,6 @@ def delete_resume():
     profile_resume_dir = get_user_resume_dir()
     filename = request.form.get('filename')
     
-    # Security: Ensure filename is safe and exists
     secure_name = secure_filename(filename)
     if not filename or secure_name != filename:
         flash('Invalid filename.', 'error')
@@ -229,9 +307,7 @@ def delete_resume():
         
     return redirect(url_for('resumes'))
 
-# --- (all the add, update, delete endpoints from previous step go here) ---
-# (routes /update_particulars, /add, /add_education, /add_project, /add_award)
-# (routes /update_item, /delete_item)
+# --- (All previous /update_item, /delete_item, etc. routes) ---
 @app.route('/update_particulars', methods=['POST'])
 def update_particulars():
     if 'profile_name' not in session: return jsonify({"status": "error", "message": "Not logged in"}), 401
@@ -354,9 +430,9 @@ def delete_item():
             return jsonify({"status": "error", "message": "Item not found"}), 404
     except Exception as e:
         return jsonify({"status": "error", "message": "An internal server error occurred."}), 500
-
+        
 # --- Run the App ---
 if __name__ == '__main__':
     if not os.path.exists(PROFILE_DIR): os.makedirs(PROFILE_DIR)
-    if not os.path.exists(RESUME_DIR): os.makedirs(RESUME_DIR) # NEW
+    if not os.path.exists(RESUME_DIR): os.makedirs(RESUME_DIR)
     app.run(debug=True)
