@@ -9,47 +9,45 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from weasyprint import HTML
-from datetime import datetime
+from datetime import datetime, timedelta
 
-# --- Vertex AI Imports ---
+# --- Google Cloud Imports ---
 import vertexai
 from vertexai.generative_models import GenerativeModel, GenerationConfig
+# --- REMOVED: from google.cloud import firestore ---
+from google.cloud import storage
 
 # --- Configuration ---
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'a-very-secret-random-key-please-change-me' 
-PROFILE_DIR = "profiles"
-PASSWORD_FILE = "passwords.json"
-RESUME_DIR = "resumes"
 
-# --- Vertex AI Setup ---
-# !!! REPLACE WITH YOUR PROJECT DETAILS !!!
+# --- !! REPLACE THESE !! ---
 YOUR_PROJECT_ID = "johanesa-playground-326616"
-YOUR_LOCATION = "us-central1"  # e.g., "us-central1"
+YOUR_LOCATION = "us-central1"
+YOUR_GCS_BUCKET_NAME = "putra_wpb_bucket" # The bucket you already created
 
+# --- Initialize Cloud Clients ---
 vertexai.init(project=YOUR_PROJECT_ID, location=YOUR_LOCATION)
+# --- REMOVED: db = firestore.Client(project=YOUR_PROJECT_ID) ---
+storage_client = storage.Client(project=YOUR_PROJECT_ID)
+bucket = storage_client.bucket(YOUR_GCS_BUCKET_NAME)
 
+# --- AI Model Config (Unchanged) ---
 model = GenerativeModel("gemini-2.5-flash-lite")
 generation_config = GenerationConfig(
     temperature=0.2,
     max_output_tokens=8192
 )
-
-# --- MODIFIED: Default AI Prompt is now a non-editable base ---
-DEFAULT_AI_PROMPT = """You are a silent, expert HTML resume generator. Your *only* output must be a single, complete HTML file.
+DEFAULT_AI_PROMPT = """You are an expert HTML resume generator and a human resource specialist. Your *only* output must be a single, complete HTML file.
 You will be given four inputs: a candidate's profile, a job application, an HTML template, and custom user instructions.
-
 **Your Task:**
 Generate a complete, tailored HTML resume by following these rules:
-
 1.  **GENERATE SUMMARY:** You *must* write a new, compelling "Professional Summary" (3-5 sentences). This summary must be hyper-specific to the **{job_title}** role at **{company_name}**, using keywords from the **{job_description}**.
 2.  **INJECT SUMMARY:** This new summary *must* be placed inside the `<section class="section">` with the `<h2>Professional Summary</h2>` heading in the final HTML.
-3.  **TAILOR CONTENT:** The "Work Experience" and "Projects" sections must be tailored. Rephrase bullet points to use action verbs and keywords from the **{job_description}** where relevant.
-4.  **FOLLOW TEMPLATE:** You *must* use the exact HTML structure, class names, and CSS provided in the **{template_example}**. If there are any blank sections, do **NOT** generate the HTML codes for that section.
+3.  **TAILOR CONTENT:** The "Work Experience" and "Projects" sections *must* be tailored to fit the {job_description}. Rephrase bullet points to use action verbs and keywords from the **{job_description}** where relevant.
+4.  **FOLLOW TEMPLATE:** You *must* use the exact HTML structure, class names, and CSS provided in the **{template_example}**.
 5.  **FOLLOW CUSTOM INSTRUCTIONS:** You *must* obey all additional rules from the user, found here: {custom_instructions}
-
 **Inputs:**
-
 ---
 **1. PROFILE_DATA:**
 {profile_json}
@@ -62,86 +60,109 @@ Generate a complete, tailored HTML resume by following these rules:
 **3. HTML_TEMPLATE:**
 {template_example}
 ---
-
 **Output Format Rules (Most Important):**
 Your response MUST be *only* the raw HTML code.
 - DO NOT write *any* text, notes, explanations, or markdown (like "```html") before the `<!DOCTYPE html>` tag.
 - Your entire response MUST start with `<!DOCTYPE html>` and end with `</html>`.
 """
 
-# --- MODIFIED: Default Profile Structure ---
+# --- Default Profile Structure (Unchanged) ---
 DEFAULT_PARTICULARS = {
     "name": "", "email": "", "languages": [], "country": ""
 }
 DEFAULT_PROFILE = {
     "particulars": DEFAULT_PARTICULARS.copy(),
     "experiences": [], "education": [], "projects": [], "awards": [],
-    "ai_custom_prompt": ""  # NEW: For user's custom instructions
+    "ai_custom_prompt": ""
 }
 
-# --- (Password Load/Save unchanged) ---
+# --- NEW: GCS Helper Functions ---
+
 def load_passwords():
-    if not os.path.exists(PASSWORD_FILE): return {}
+    """Loads the password hash file from GCS."""
     try:
-        with open(PASSWORD_FILE, 'r', encoding='utf-8') as f: return json.load(f)
-    except (json.JSONDecodeError, IOError): return {}
+        blob_path = "passwords.json"
+        blob = bucket.blob(blob_path)
+        if blob.exists():
+            return json.loads(blob.download_as_string())
+    except Exception as e:
+        print(f"Error loading passwords from GCS: {e}")
+    return {} # Return empty if not found or error
+
 def save_passwords(passwords):
-    with open(PASSWORD_FILE, 'w', encoding='utf-8') as f: json.dump(passwords, f, indent=4)
+    """Saves the password hash file to GCS."""
+    blob_path = "passwords.json"
+    blob = bucket.blob(blob_path)
+    blob.upload_from_string(
+        json.dumps(passwords, indent=4),
+        content_type="application/json"
+    )
 
-# --- MODIFIED: load_profile_data ---
 def load_profile_data(profile_name):
-    new_profile_data = DEFAULT_PROFILE.copy()
-    new_profile_data['particulars'] = DEFAULT_PARTICULARS.copy()
-
-    if not os.path.exists(PROFILE_DIR): os.makedirs(PROFILE_DIR)
-    if ".." in profile_name or "/" in profile_name or "\\" in profile_name:
-         return new_profile_data
-    filepath = os.path.join(PROFILE_DIR, f"{profile_name}.json")
-    if not os.path.exists(filepath): return new_profile_data
+    """Loads a single user's profile from GCS."""
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            if isinstance(data, list):
-                new_profile_data['experiences'] = data
-                return new_profile_data
-            elif isinstance(data, dict):
-                new_profile_data.update(data)
-                if 'particulars' not in data:
-                    new_profile_data['particulars'] = DEFAULT_PARTICULARS.copy()
-                else:
-                    default_particulars_copy = DEFAULT_PARTICULARS.copy()
-                    default_particulars_copy.update(data['particulars'])
-                    new_profile_data['particulars'] = default_particulars_copy
-                
-                # NEW: Ensure ai_custom_prompt exists
-                if 'ai_custom_prompt' not in data:
-                     new_profile_data['ai_custom_prompt'] = ""
-
-                return new_profile_data
-            else: return new_profile_data
-    except (json.JSONDecodeError, IOError): return new_profile_data
-
-# --- MODIFIED: save_profile_data ---
-def save_profile_data(profile_name, profile_data):
-    if not os.path.exists(PROFILE_DIR): os.makedirs(PROFILE_DIR)
-    if ".." in profile_name or "/" in profile_name or "\\" in profile_name:
-         raise ValueError("Invalid profile name")
-    filepath = os.path.join(PROFILE_DIR, f"{profile_name}.json")
-    with open(filepath, 'w', encoding='utf-8') as f:
-        if isinstance(profile_data, dict):
+        blob_path = f"{profile_name}/profile.json" # Standardized path
+        blob = bucket.blob(blob_path)
+        if blob.exists():
+            data = json.loads(blob.download_as_string())
+            
+            # Merge with default to ensure all keys exist
             full_data = DEFAULT_PROFILE.copy()
             full_data['particulars'] = DEFAULT_PARTICULARS.copy()
-            full_data.update(profile_data)
+            full_data.update(data)
             
-            if 'particulars' in profile_data:
+            if 'particulars' in data:
                 full_data['particulars'] = DEFAULT_PARTICULARS.copy()
-                full_data['particulars'].update(profile_data['particulars'])
+                full_data['particulars'].update(data['particulars'])
             
-            # Ensure ai_custom_prompt is saved
-            full_data['ai_custom_prompt'] = profile_data.get('ai_custom_prompt', "")
+            if 'ai_custom_prompt' not in data:
+                 full_data['ai_custom_prompt'] = ""
+            return full_data
+    except Exception as e:
+        print(f"Error loading profile {profile_name} from GCS: {e}")
+        
+    return DEFAULT_PROFILE.copy() # Return default if not found or error
 
-            json.dump(full_data, f, indent=4)
-        else: json.dump(DEFAULT_PROFILE, f, indent=4)
+def save_profile_data(profile_name, profile_data):
+    """Saves a single user's profile to GCS."""
+    blob_path = f"{profile_name}/profile.json" # Standardized path
+    
+    # Ensure all keys are present
+    full_data = DEFAULT_PROFILE.copy()
+    full_data['particulars'] = DEFAULT_PARTICULARS.copy()
+    full_data.update(profile_data)
+    
+    if 'particulars' in profile_data:
+        full_data['particulars'] = DEFAULT_PARTICULARS.copy()
+        full_data['particulars'].update(profile_data['particulars'])
+    
+    full_data['ai_custom_prompt'] = profile_data.get('ai_custom_prompt', "")
+    
+    blob = bucket.blob(blob_path)
+    blob.upload_from_string(
+        json.dumps(full_data, indent=4),
+        content_type="application/json"
+    )
+
+def load_resume_metadata(profile_name):
+    """Reads the resumes.json file from GCS."""
+    try:
+        blob_path = f"{profile_name}/resumes.json" # Path is in user's folder
+        blob = bucket.blob(blob_path)
+        if blob.exists():
+            return json.loads(blob.download_as_string())
+    except Exception as e:
+        print(f"Error loading resume metadata: {e}")
+    return []
+
+def save_resume_metadata(profile_name, metadata_list):
+    """Saves the metadata list to the resumes.json file in GCS."""
+    blob_path = f"{profile_name}/resumes.json" # Path is in user's folder
+    blob = bucket.blob(blob_path)
+    blob.upload_from_string(
+        json.dumps(metadata_list, indent=4),
+        content_type="application/json"
+    )
 
 # --- (Auth Routes & Main Page Route are unchanged) ---
 @app.route('/login', methods=['GET', 'POST'])
@@ -165,7 +186,7 @@ def login():
             hashed_password = generate_password_hash(password)
             passwords[profile_name] = hashed_password
             save_passwords(passwords)
-            save_profile_data(profile_name, DEFAULT_PROFILE.copy()) # Will save default prompt
+            save_profile_data(profile_name, DEFAULT_PROFILE.copy()) 
             session['profile_name'] = profile_name
             flash(f'New profile "{profile_name}" created. Welcome!', 'success')
             return redirect(url_for('index'))
@@ -187,67 +208,71 @@ def index():
                            profile_name=profile_name, 
                            profile_data=profile_data)
 
-# --- Resume Metadata Functions (unchanged) ---
-def get_user_resume_dir():
-    if 'profile_name' not in session: return None
-    profile_folder = secure_filename(session['profile_name'])
-    profile_resume_dir = os.path.join(RESUME_DIR, profile_folder)
-    if not os.path.exists(profile_resume_dir): os.makedirs(profile_resume_dir)
-    return profile_resume_dir
-def load_resume_metadata(profile_resume_dir):
-    metadata_path = os.path.join(profile_resume_dir, 'resumes.json')
-    if not os.path.exists(metadata_path): return []
-    try:
-        with open(metadata_path, 'r', encoding='utf-8') as f: return json.load(f)
-    except (json.JSONDecodeError, IOError): return []
-def save_resume_metadata(profile_resume_dir, metadata_list):
-    metadata_path = os.path.join(profile_resume_dir, 'resumes.json')
-    with open(metadata_path, 'w', encoding='utf-8') as f: json.dump(metadata_list, f, indent=4)
-
-# --- Resume Routes (MODIFIED) ---
+# --- Resume Routes (MODIFIED for GCS) ---
 
 @app.route('/resumes')
 def resumes():
-    """Shows the list of resumes and passes the user's custom AI prompt."""
     if 'profile_name' not in session:
         return redirect(url_for('login'))
-    
-    profile_resume_dir = get_user_resume_dir()
-    resume_metadata = load_resume_metadata(profile_resume_dir)
+    profile_name = session['profile_name']
+    resume_metadata = load_resume_metadata(profile_name)
     resume_metadata.sort(key=lambda x: x.get('generation_date', ''), reverse=True)
-    
-    # NEW: Load profile to get the custom prompt
-    profile_data = load_profile_data(session['profile_name'])
+    profile_data = load_profile_data(profile_name)
     current_custom_prompt = profile_data.get('ai_custom_prompt', "")
-        
     return render_template('resumes.html', 
                            resume_files=resume_metadata, 
-                           current_custom_prompt=current_custom_prompt) # Pass custom prompt
+                           current_custom_prompt=current_custom_prompt)
 
 @app.route('/resumes/<filename>')
 def view_resume(filename):
-    if 'profile_name' not in session: return redirect(url_for('login'))
-    profile_resume_dir = get_user_resume_dir()
-    if not profile_resume_dir: return "Not found", 404
+    if 'profile_name' not in session:
+        return redirect(url_for('login'))
+    profile_name = session['profile_name']
     secure_name = secure_filename(filename)
     if secure_name != filename: return "Invalid filename", 400
-    return send_from_directory(profile_resume_dir, secure_name)
+    
+    blob_path = f"{profile_name}/{secure_name}" # Path is in user's folder
+    blob = bucket.blob(blob_path)
+    if not blob.exists():
+        return "Not found", 404
+    try:
+        url = blob.generate_signed_url(
+            version="v4",
+            expiration=timedelta(minutes=15),
+            method="GET"
+        )
+        return redirect(url)
+    except Exception as e:
+        print(f"Error generating signed URL: {e}")
+        return "Error, could not view file", 500
 
 @app.route('/download_resume/<filename>')
 def download_resume(filename):
-    if 'profile_name' not in session: return redirect(url_for('login'))
-    profile_resume_dir = get_user_resume_dir()
-    if not profile_resume_dir: return "Not found", 404
+    if 'profile_name' not in session:
+        return redirect(url_for('login'))
+    profile_name = session['profile_name']
     secure_name = secure_filename(filename)
     if secure_name != filename: return "Invalid filename", 400
-    filepath = os.path.join(profile_resume_dir, secure_name)
-    if not os.path.exists(filepath): return "File not found", 404
+    
+    blob_path = f"{profile_name}/{secure_name}" # Path is in user's folder
+    blob = bucket.blob(blob_path)
+    if not blob.exists():
+        return "File not found", 404
     try:
-        html = HTML(filename=filepath) 
+        # Download HTML from GCS as string
+        html_string = blob.download_as_string()
+        
+        # Render PDF in memory from the string
+        html = HTML(string=html_string) 
         pdf_bytes = html.write_pdf()
+        
         pdf_filename = os.path.splitext(secure_name)[0] + '.pdf'
-        return Response(pdf_bytes, mimetype="application/pdf",
-                        headers={"Content-Disposition": f"attachment;filename={pdf_filename}"})
+        
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f"attachment;filename={pdf_filename}"}
+        )
     except Exception as e:
         print(f"Error converting PDF: {e}")
         flash(f'Error converting file to PDF: {e}', 'error')
@@ -257,7 +282,6 @@ def download_resume(filename):
 def add_resume():
     if 'profile_name' not in session: return redirect(url_for('login'))
     profile_name = session['profile_name']
-    profile_resume_dir = get_user_resume_dir()
     
     company_name = request.form.get('company_name')
     job_title = request.form.get('job_title')
@@ -286,26 +310,17 @@ def add_resume():
         flash('ERROR: resume_template.html not found.', 'error')
         return redirect(url_for('resumes'))
 
-    # --- MODIFIED: Use the user's custom prompt ---
     user_custom_prompt = profile_data.get('ai_custom_prompt', "")
 
     try:
-        # Create context dictionary to format the prompt
         prompt_context = {
-            "profile_json": profile_json,
-            "job_title": job_title,
-            "company_name": company_name,
-            "job_description": job_description,
-            "template_example": template_example,
-            "custom_instructions": user_custom_prompt  # Inject custom instructions
+            "profile_json": profile_json, "job_title": job_title,
+            "company_name": company_name, "job_description": job_description,
+            "template_example": template_example, "custom_instructions": user_custom_prompt
         }
-        
-        # Format the main prompt with the context
         prompt = DEFAULT_AI_PROMPT.format_map(prompt_context)
         
-        # Call Vertex AI
         response = model.generate_content(prompt, generation_config=generation_config)
-        
         ai_generated_html = response.text
         ai_generated_html = ai_generated_html.strip().replace("```html", "").replace("```", "").strip()
         
@@ -313,28 +328,30 @@ def add_resume():
             error_snippet = ai_generated_html.replace('<', '&lt;').replace('>', '&gt;')
             raise Exception(f"AI did not return valid HTML. Response started with: {error_snippet[:300]}...")
 
-        filepath = os.path.join(profile_resume_dir, resume_filename)
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write(ai_generated_html)
+        # Upload HTML to GCS
+        blob_path = f"{profile_name}/{resume_filename}"
+        blob = bucket.blob(blob_path)
+        blob.upload_from_string(
+            ai_generated_html,
+            content_type="text/html"
+        )
             
-        metadata_list = load_resume_metadata(profile_resume_dir)
+        # Update metadata
+        metadata_list = load_resume_metadata(profile_name)
         new_resume_entry = {
-            "id": str(uuid.uuid4()),
-            "filename": resume_filename,
+            "id": str(uuid.uuid4()), "filename": resume_filename,
             "name": f"{job_title} at {company_name}",
-            "role": job_title,
-            "company": company_name,
+            "role": job_title, "company": company_name,
             "generation_date": now.strftime("%Y-%m-%d %H:%M:%S")
         }
         metadata_list.append(new_resume_entry)
-        save_resume_metadata(profile_resume_dir, metadata_list)
+        save_resume_metadata(profile_name, metadata_list)
         
         flash(f'Successfully generated AI-tailored resume for {job_title}', 'success')
         
     except KeyError as e:
-        # This catches if the main prompt has a missing variable (our error)
         print(f"Prompt formatting error: {e}")
-        flash(f'Critical prompt error: Missing variable {e}.', 'error')
+        flash(f'Error in your custom AI prompt: Missing variable {e}. Please edit the prompt and try again.', 'error')
     except Exception as e:
         print(f"Error generating resume: {e}")
         flash(f'Error generating AI resume: {e}', 'error')
@@ -345,27 +362,35 @@ def add_resume():
 def delete_resume():
     if 'profile_name' not in session:
         return redirect(url_for('login'))
-    profile_resume_dir = get_user_resume_dir()
+    profile_name = session['profile_name']
     resume_id = request.form.get('resume_id')
     if not resume_id:
         flash('Invalid request.', 'error')
         return redirect(url_for('resumes'))
-    metadata_list = load_resume_metadata(profile_resume_dir)
+        
+    metadata_list = load_resume_metadata(profile_name)
     item_to_delete = next((item for item in metadata_list if item.get('id') == resume_id), None)
+    
     if item_to_delete:
         filename = item_to_delete.get('filename')
         if filename:
-            filepath = os.path.join(profile_resume_dir, secure_filename(filename))
-            if os.path.exists(filepath):
-                os.remove(filepath)
+            # Delete from GCS
+            try:
+                blob_path = f"{profile_name}/{secure_filename(filename)}"
+                blob = bucket.blob(blob_path)
+                if blob.exists():
+                    blob.delete()
+            except Exception as e:
+                print(f"Error deleting file from GCS: {e}")
+        
         new_metadata_list = [item for item in metadata_list if item.get('id') != resume_id]
-        save_resume_metadata(profile_resume_dir, new_metadata_list)
+        save_resume_metadata(profile_name, new_metadata_list)
         flash(f'Successfully deleted resume', 'success')
     else:
         flash('File not found.', 'error')
+        
     return redirect(url_for('resumes'))
 
-# --- NEW: Route to update the CUSTOM AI prompt ---
 @app.route('/update_custom_prompt', methods=['POST'])
 def update_custom_prompt():
     if 'profile_name' not in session: 
@@ -381,7 +406,7 @@ def update_custom_prompt():
         
         profile_data['ai_custom_prompt'] = new_prompt
         
-        save_profile_data(profile_name, profile_data)
+        save_profile_data(profile_name, profile_data) # Save to GCS
         
         return jsonify({"status": "success", "message": "Custom prompt updated."})
         
@@ -402,6 +427,7 @@ def update_particulars():
         save_profile_data(profile_name, profile_data)
         return jsonify({"status": "success", "message": "Particulars updated successfully."})
     except Exception as e:
+        print(f"Error in /update_particulars: {e}")
         return jsonify({"status": "error", "message": "An internal server error occurred."}), 500
 
 @app.route('/add', methods=['POST'])
@@ -417,6 +443,7 @@ def add_experience():
         save_profile_data(profile_name, profile_data)
         return jsonify({"status": "success", "newItem": new_experience})
     except Exception as e:
+        print(f"Error in /add: {e}")
         return jsonify({"status": "error", "message": "An internal server error occurred."}), 500
 
 @app.route('/add_education', methods=['POST'])
@@ -432,6 +459,7 @@ def add_education():
         save_profile_data(profile_name, profile_data)
         return jsonify({"status": "success", "newItem": new_education})
     except Exception as e:
+        print(f"Error in /add_education: {e}")
         return jsonify({"status": "error", "message": "An internal server error occurred."}), 500
 
 @app.route('/add_project', methods=['POST'])
@@ -447,6 +475,7 @@ def add_project():
         save_profile_data(profile_name, profile_data)
         return jsonify({"status": "success", "newItem": new_project})
     except Exception as e:
+        print(f"Error in /add_project: {e}")
         return jsonify({"status": "error", "message": "An internal server error occurred."}), 500
 
 @app.route('/add_award', methods=['POST'])
@@ -515,6 +544,4 @@ def delete_item():
         
 # --- Run the App ---
 if __name__ == '__main__':
-    if not os.path.exists(PROFILE_DIR): os.makedirs(PROFILE_DIR)
-    if not os.path.exists(RESUME_DIR): os.makedirs(RESUME_DIR)
-    app.run(debug=True)
+    app.run(debug=True, port=8080)

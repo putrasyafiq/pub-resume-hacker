@@ -11,6 +11,9 @@
             place-items: center;
             min-height: 100vh;
             background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box; /* Added */
         }
         .login-container {
             width: 100%;
@@ -19,6 +22,7 @@
             background: #ffffff;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-sizing: border-box; /* Added */
         }
         h1 {
             text-align: center;
@@ -53,7 +57,6 @@
         button:hover {
             background-color: #0056b3;
         }
-        /* Flash messages */
         .flashes {
             list-style: none;
             padding: 0;
@@ -73,6 +76,16 @@
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
+        }
+        
+        /* --- NEW: Mobile Styles --- */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px; /* Tighter padding on mobile */
+            }
+            .login-container {
+                padding: 20px; /* Tighter padding */
+            }
         }
     </style>
 </head>

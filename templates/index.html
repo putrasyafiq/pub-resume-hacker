@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Builder</title>
+    <title>Work Profile Builder</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6; background-color: #f4f7f6; color: #333;
             margin: 0; padding: 20px;
-            scroll-behavior: smooth; /* Adds a nice smooth scroll */
+            scroll-behavior: smooth;
         }
         .container {
             max-width: 900px; margin: 0 auto; background: #ffffff;
@@ -19,34 +19,29 @@
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 2px solid #eee; padding-bottom: 10px;
         }
-        .header h1 { border-bottom: none; padding-bottom: 0; margin: 0; }
-        .header-buttons {
-            display: flex;
-            gap: 10px;
-        }
+        .header h1 { border-bottom: none; padding-bottom: 0; margin: 0; font-size: 1.5em; }
+        .header-buttons { display: flex; gap: 10px; }
         a.header-btn {
             color: white; text-decoration: none;
             padding: 8px 14px; border-radius: 5px; font-size: 14px; font-weight: 500;
         }
         a.logout-btn { background-color: #dc3545; }
         a.logout-btn:hover { background-color: #c82333; }
-        a.resume-btn {
-            background-color: #28a745;
-        }
-        a.resume-btn:hover {
-            background-color: #218838;
-        }
+        a.resume-btn { background-color: #28a745; }
+        a.resume-btn:hover { background-color: #218838; }
+        
         .particulars-header {
             display: flex; justify-content: space-between; align-items: center;
         }
         #particularsDisplay {
             background: #fafafa; border: 1px solid #e0e0e0;
             border-radius: 8px; padding: 15px 25px; margin-bottom: 20px;
+            word-break: break-word; /* Prevents long text overflow */
         }
         #particularsDisplay p { margin: 8px 0; }
         #particularsDisplay h3 { margin-top: 0; }
         
-        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.3em; }
         .controls { display: flex; gap: 10px; flex-wrap: wrap; }
         button {
             background-color: #007bff; color: white; border: none;
@@ -86,7 +81,8 @@
             border-radius: 5px; padding: 15px; margin-bottom: 15px;
             position: relative;
         }
-        .data-card h3 { margin-top: 0; }
+        .data-card h3 { margin-top: 0; word-break: break-word; }
+        .data-card p { word-break: break-word; }
         
         .card-controls {
             position: absolute;
@@ -100,19 +96,55 @@
             font-size: 12px;
             font-weight: 500;
         }
-        .card-controls .edit-card-btn {
-            background-color: #007bff;
-        }
-        .card-controls .delete-card-btn {
-            background-color: #dc3545;
+        .card-controls .edit-card-btn { background-color: #007bff; }
+        .card-controls .delete-card-btn { background-color: #dc3545; }
+        
+        /* --- NEW: Mobile Styles --- */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .header-buttons {
+                width: 100%;
+            }
+            a.header-btn {
+                flex-grow: 1; /* Make buttons share space */
+                text-align: center;
+            }
+            .controls {
+                flex-direction: column; /* Stack "Add" buttons */
+            }
+            .controls button {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .date-options {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .date-options input[type="date"] {
+                width: 100%;
+            }
+            .card-controls {
+                position: static; /* Make buttons part of the flow */
+                margin-top: 15px;
+            }
         }
     </style>
 </head>
 <body>
-
     <div class="container">
         <div class="header">
-            <h1>Resume Builder</h1>
+            <h1>Profile: {{ profile_name }}</h1>
             <div class="header-buttons">
                 <a href="/resumes" class="header-btn resume-btn">My Resumes</a>
                 <a href="/logout" class="header-btn logout-btn">Logout</a>
@@ -308,7 +340,7 @@
 
         // --- Particulars Section ---
         showParticularsFormBtn.addEventListener('click', () => {
-            window.scrollTo(0, 0); // --- ADDED ---
+            window.scrollTo(0, 0); 
             hideAllForms();
             document.getElementById('partName').value = particulars.name || '';
             document.getElementById('partEmail').value = particulars.email || '';
@@ -344,7 +376,7 @@
 
         // --- Experience Section ---
         function showExperienceForm(item = null) {
-            window.scrollTo(0, 0); // --- ADDED ---
+            window.scrollTo(0, 0); 
             hideAllForms();
             experienceForm.reset();
             document.getElementById('dateEnded').disabled = false;
@@ -422,21 +454,19 @@
 
         // --- Education Section ---
         function showEducationForm(item = null) {
-            window.scrollTo(0, 0); // --- ADDED ---
+            window.scrollTo(0, 0); 
             hideAllForms();
             educationForm.reset();
             document.getElementById('dateAttained').disabled = false;
             document.getElementById('dateAttainedPresent').checked = false;
             document.getElementById('dateAttainedNone').checked = false;
             const submitBtn = educationForm.querySelector('button[type="submit"]');
-            
-            if (item) { // Edit Mode
+            if (item) {
                 document.getElementById('educationEditId').value = item.id;
                 document.getElementById('certName').value = item.nameOfCertificate;
                 document.getElementById('institution').value = item.nameOfInstitution;
                 document.getElementById('eduDateStarted').value = item.dateStarted;
                 document.getElementById('eduDescription').value = item.educationDescription || '';
-                
                 if (item.dateAttained === 'Present') {
                     document.getElementById('dateAttainedPresent').checked = true;
                     document.getElementById('dateAttained').disabled = true;
@@ -447,7 +477,7 @@
                     document.getElementById('dateAttained').value = item.dateAttained;
                 }
                 submitBtn.textContent = 'Update Education';
-            } else { // Add Mode
+            } else {
                 document.getElementById('educationEditId').value = '';
                 submitBtn.textContent = 'Add Education';
             }
@@ -469,12 +499,10 @@
             event.preventDefault();
             const id = document.getElementById('educationEditId').value;
             const isEdit = (id !== '');
-            
             let attainedDateValue;
             if (document.getElementById('dateAttainedPresent').checked) attainedDateValue = 'Present';
             else if (document.getElementById('dateAttainedNone').checked) attainedDateValue = null;
             else attainedDateValue = document.getElementById('dateAttained').value || null;
-            
             const itemData = {
                 id: id || null,
                 nameOfCertificate: document.getElementById('certName').value,
@@ -483,10 +511,8 @@
                 dateAttained: attainedDateValue,
                 educationDescription: document.getElementById('eduDescription').value
             };
-            
             const url = isEdit ? '/update_item' : '/add_education';
             const body = isEdit ? JSON.stringify({ itemType: 'education', item: itemData }) : JSON.stringify({ education: itemData });
-
             fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: body })
             .then(response => response.json())
             .then(data => {
@@ -506,7 +532,7 @@
         
         // --- Project Section ---
         function showProjectForm(item = null) {
-            window.scrollTo(0, 0); // --- ADDED ---
+            window.scrollTo(0, 0); 
             hideAllForms();
             projectForm.reset();
             const submitBtn = projectForm.querySelector('button[type="submit"]');
@@ -567,7 +593,7 @@
         
         // --- Award Section ---
         function showAwardForm(item = null) {
-            window.scrollTo(0, 0); // --- ADDED ---
+            window.scrollTo(0, 0); 
             hideAllForms();
             awardForm.reset();
             const submitBtn = awardForm.querySelector('button[type="submit"]');
@@ -628,7 +654,6 @@
 
 
         // --- Display Update Functions ---
-
         function updateParticularsDisplay() {
             particularsDisplay.innerHTML = '';
             if (particulars.name) {
@@ -655,7 +680,6 @@
                 particularsDisplay.innerHTML = '<p>No personal details added yet. Click "Edit" to add them.</p>';
             }
         }
-
         function updateExperienceDisplay() {
             experienceDisplay.innerHTML = '';
             experiences.sort((a, b) => new Date(b.dateStarted) - new Date(a.dateStarted));
@@ -681,7 +705,6 @@
                 experienceDisplay.appendChild(card);
             });
         }
-        
         function updateEducationDisplay() {
             educationDisplay.innerHTML = '';
             education.sort((a, b) => new Date(b.dateStarted) - new Date(a.dateStarted));
@@ -712,7 +735,6 @@
                 educationDisplay.appendChild(card);
             });
         }
-        
         function updateProjectDisplay() {
             projectDisplay.innerHTML = '';
             projects.sort((a, b) => new Date(b.projectDate) - new Date(a.projectDate));
@@ -733,7 +755,6 @@
                 projectDisplay.appendChild(card);
             });
         }
-        
         function updateAwardDisplay() {
             awardDisplay.innerHTML = '';
             awards.sort((a, b) => new Date(b.awardDate) - new Date(a.awardDate));
