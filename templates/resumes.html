@@ -20,7 +20,7 @@
         }
         .header-left { display: flex; align-items: center; gap: 20px; }
         .header-right { display: flex; align-items: center; gap: 10px; }
-        h1 { margin: 0; font-size: 1.5em; }
+        h1 { margin: 0; }
         a.header-btn, button.header-btn {
             background-color: #6c757d; color: white; text-decoration: none;
             padding: 8px 14px; border-radius: 5px; font-size: 14px; font-weight: 500;
@@ -30,7 +30,6 @@
         button.prompt-btn { background-color: #17a2b8; }
         button.prompt-btn:hover { background-color: #138496; }
         
-        h2 { font-size: 1.3em; }
         .add-resume-form {
             background: #fdfdfd; border: 1px solid #ddd;
             border-radius: 8px; padding: 20px; margin-bottom: 25px;
@@ -70,7 +69,7 @@
             padding: 15px; background: #fafafa; border: 1px solid #e0e0e0;
             border-radius: 5px; margin-bottom: 10px;
         }
-        .resume-info { display: flex; flex-direction: column; word-break: break-word; }
+        .resume-info { display: flex; flex-direction: column; }
         .resume-info span { font-size: 1.1em; font-weight: 500; }
         .resume-info small { font-size: 0.9em; color: #555; }
         
@@ -78,7 +77,6 @@
         .resume-item-controls a, .resume-item-controls button {
             text-decoration: none; padding: 6px 12px; font-size: 14px;
             border-radius: 5px; color: white; border: none; cursor: pointer;
-            white-space: nowrap; /* Prevent buttons wrapping */
         }
         .resume-item-controls a.view-btn { background-color: #28a745; }
         .resume-item-controls a.download-btn { background-color: #007bff; }
@@ -93,6 +91,7 @@
         .flashes li.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .flashes li.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         
+        /* --- Modal Styles (Unchanged) --- */
         .modal-backdrop {
             display: none; position: fixed; top: 0; left: 0;
             width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6);
@@ -102,9 +101,8 @@
             background: white; width: 90%; max-width: 800px;
             margin: 5% auto; padding: 25px; border-radius: 8px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            box-sizing: border-box; /* Added */
         }
-        .modal-content h2 { margin-top: 0; font-size: 1.3em; }
+        .modal-content h2 { margin-top: 0; }
         .modal-content p { font-size: 0.9em; color: #555; }
         .modal-content textarea {
             width: 100%; min-height: 400px; box-sizing: border-box;
@@ -116,57 +114,6 @@
             justify-content: flex-end; gap: 10px;
         }
         .modal-footer button { padding: 10px 16px; font-size: 14px; }
-        
-        /* --- NEW: Mobile Styles --- */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            .container {
-                padding: 15px;
-            }
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            .header-left { width: 100%; }
-            .header-right { 
-                width: 100%;
-                flex-direction: column;
-            }
-            .header-right a, .header-right button {
-                width: 100%;
-                text-align: center;
-                box-sizing: border-box;
-            }
-            .form-row {
-                flex-direction: column; /* Stack name/company */
-                gap: 0;
-            }
-            .resume-item {
-                flex-direction: column; /* Stack resume info and controls */
-                align-items: flex-start;
-                gap: 15px;
-            }
-            .resume-item-controls {
-                width: 100%;
-            }
-            .resume-item-controls a, .resume-item-controls form {
-                flex-grow: 1; /* Make buttons share space */
-            }
-            .resume-item-controls a, .resume-item-controls button {
-                width: 100%;
-                box-sizing: border-box;
-                text-align: center;
-            }
-            .modal-content {
-                padding: 15px;
-            }
-            .modal-content textarea {
-                min-height: 300px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -193,6 +140,7 @@
 
         <h2>Generate New AI-Tailored Resume</h2>
         <form action="/add_resume" method="POST" class="add-resume-form" onsubmit="showSpinner(this)">
+            
             <div class="form-row">
                 <div class="form-group">
                     <label for="job_title">Job Title</label>
@@ -203,6 +151,7 @@
                     <input type="text" id="company_name" name="company_name" placeholder="e.g., 'Google'" required>
                 </div>
             </div>
+            
             <div class="form-group">
                 <label for="job_description">Paste Job Description</label>
                 <textarea id="job_description" name="job_description" placeholder="Paste the full job description text here..." required></textarea>
@@ -259,6 +208,7 @@
     </div>
 
     <script>
+        // --- Spinner Script (Unchanged) ---
         function showSpinner(form) {
             const btn = form.querySelector('#generate-btn');
             const spinner = btn.querySelector('.spinner');
@@ -269,28 +219,36 @@
             btnText.textContent = 'Generating...';
         }
         
+        // --- MODIFIED: Modal Script ---
+        
+        // 1. Get the current *custom* prompt from Flask
         let currentCustomPrompt = {{ current_custom_prompt | tojson }};
         
+        // 2. Get modal elements
         const showModalBtn = document.getElementById('showPromptModal');
         const modal = document.getElementById('promptModal');
         const cancelBtn = document.getElementById('cancelPromptBtn');
         const saveBtn = document.getElementById('savePromptBtn');
         const promptEditor = document.getElementById('promptEditor');
 
+        // 3. Show the modal
         showModalBtn.addEventListener('click', () => {
-            promptEditor.value = currentCustomPrompt;
+            promptEditor.value = currentCustomPrompt; // Load current custom prompt
             modal.style.display = 'block';
         });
 
+        // 4. Hide the modal
         cancelBtn.addEventListener('click', () => {
             modal.style.display = 'none';
         });
         
+        // 5. Save the custom prompt
         saveBtn.addEventListener('click', () => {
             const newPrompt = promptEditor.value;
             saveBtn.disabled = true;
             saveBtn.textContent = 'Saving...';
             
+            // MODIFIED: Call the new endpoint
             fetch('/update_custom_prompt', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -299,7 +257,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    currentCustomPrompt = newPrompt;
+                    currentCustomPrompt = newPrompt; // Update local copy
                     modal.style.display = 'none';
                     alert('Custom instructions saved!');
                 } else {
